@@ -1,56 +1,58 @@
 <template>
-  <div class="card p-6">
-    <h3 class="text-base font-semibold text-gray-900 mb-4">Room Availability</h3>
-    <div class="space-y-3">
-      <div
-        v-for="room in rooms"
-        :key="room.id"
-        class="flex items-center justify-between p-3 rounded-lg border border-gray-100 hover:border-gray-200 transition-colors"
-      >
-        <div class="flex items-center gap-3">
-          <div
-            class="w-2.5 h-2.5 rounded-full flex-shrink-0"
-            :class="room.available ? 'bg-green-400' : 'bg-red-400'"
-          />
-          <div>
-            <p class="text-sm font-medium text-gray-800">{{ room.name }}</p>
-            <p class="text-xs text-gray-400">Capacity: {{ room.capacity }} people</p>
-          </div>
-        </div>
-        <div class="flex items-center gap-2">
-          <span
-            class="badge"
-            :class="room.available ? 'badge-success' : 'badge-danger'"
-          >
-            {{ room.available ? 'Available' : 'Occupied' }}
-          </span>
-          <button
-            v-if="room.available"
-            class="text-xs text-primary-600 hover:text-primary-700 font-medium"
-          >
-            Book
-          </button>
-        </div>
-      </div>
+  <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+    <div class="mb-4 flex items-center justify-between">
+      <h3 class="text-base font-semibold text-gray-900">Room Availability</h3>
+      <NuxtLink to="/dashboard/rooms" class="text-xs font-medium text-primary-600 hover:text-primary-700">View all</NuxtLink>
     </div>
-    <NuxtLink
-      to="/dashboard/rooms"
-      class="flex items-center justify-center gap-2 mt-4 text-sm text-primary-600 hover:text-primary-700 font-medium"
-    >
-      View all rooms
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+
+    <!-- Loading -->
+    <div v-if="loading" class="space-y-3">
+      <div v-for="i in 5" :key="i" class="h-12 animate-pulse rounded-xl bg-gray-100" />
+    </div>
+
+    <!-- Empty -->
+    <div v-else-if="!displayRooms.length" class="flex flex-col items-center justify-center py-10 text-center">
+      <svg class="mb-2 h-8 w-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
       </svg>
-    </NuxtLink>
+      <p class="text-sm text-gray-400">No rooms yet</p>
+    </div>
+
+    <!-- List -->
+    <div v-else class="space-y-2.5">
+      <div
+        v-for="room in displayRooms"
+        :key="room.roomId"
+        class="flex items-center justify-between rounded-xl border border-gray-100 px-3 py-2.5 transition-colors hover:border-gray-200"
+      >
+        <div class="min-w-0 flex-1">
+          <p class="truncate text-sm font-medium text-gray-800">
+            {{ room.roomNumber ? `Room ${room.roomNumber}` : `Room #${room.roomId}` }}
+          </p>
+          <p class="truncate text-xs text-gray-400">{{ room.roomType?.typeName ?? '—' }}</p>
+        </div>
+        <RoomsRoomStatusBadge :status="room.roomStatus" class="ml-2 flex-shrink-0" />
+      </div>
+
+      <!-- More rooms hint -->
+      <p v-if="roomsStore.items.length > 5" class="pt-1 text-center text-xs text-gray-400">
+        +{{ roomsStore.items.length - 5 }} more rooms
+      </p>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-const rooms = [
-  { id: 1, name: 'Conference Room A', capacity: 20, available: true },
-  { id: 2, name: 'Meeting Room 101', capacity: 8, available: false },
-  { id: 3, name: 'Board Room', capacity: 15, available: true },
-  { id: 4, name: 'Training Room 205', capacity: 30, available: true },
-  { id: 5, name: 'Executive Suite', capacity: 10, available: false },
-]
+import { RoomStatus } from '~/types/api'
+
+const roomsStore = useRoomsStore()
+
+const loading = computed(() => roomsStore.loading)
+
+// Show available rooms first, then others — limit to 5
+const displayRooms = computed(() => {
+  const available = roomsStore.items.filter(r => r.roomStatus?.toUpperCase() === RoomStatus.AVAILABLE)
+  const others    = roomsStore.items.filter(r => r.roomStatus?.toUpperCase() !== RoomStatus.AVAILABLE)
+  return [...available, ...others].slice(0, 5)
+})
 </script>

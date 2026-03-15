@@ -1,7 +1,10 @@
 import { defineStore } from 'pinia'
 import type {
   ApiResponse,
+  PageAbleRequest,
+  PageAbleResponse,
   UserResponse,
+  UserFilterRequest,
   CreateUserRequest,
   UpdateUserRequest,
   AssignRoleRequest,
@@ -9,22 +12,42 @@ import type {
 
 export const useUsersStore = defineStore('users', {
   state: () => ({
-    items: [] as UserResponse[],   // full list from API
+    items: [] as UserResponse[],
+    totalPages: 0,
+    totalElements: 0,
     loading: false,
     submitting: false,
     error: null as string | null,
   }),
 
   actions: {
-    // GET /api/users → ApiResponse<UserResponse[]>  (no server-side pagination)
-    async fetchAll() {
+    // POST /api/users/list/filter → ApiResponse<PageAbleResponse<UserResponse>>
+    async fetchPage(params?: {
+      filter?: UserFilterRequest
+      pageNumber?: number   // 1-based
+      size?: number
+      sortProperty?: string
+      sortDirection?: 'asc' | 'desc'
+    }) {
       const { apiFetch } = useApi()
       this.loading = true
       this.error = null
       try {
-        const res = await apiFetch<ApiResponse<UserResponse[]>>('/api/users')
+        const body: PageAbleRequest<UserFilterRequest> = {
+          pageNumber: params?.pageNumber ?? 1,
+          size: params?.size ?? 10,
+          sortProperty: params?.sortProperty ?? 'userId',
+          sortDirection: params?.sortDirection ?? 'desc',
+          parameter: params?.filter ?? {},
+        }
+        const res = await apiFetch<ApiResponse<PageAbleResponse<UserResponse>>>(
+          '/api/users/list/filter',
+          { method: 'POST', body },
+        )
         if (res.success && res.data) {
-          this.items = res.data
+          this.items = res.data.list
+          this.totalPages = res.data.totalPages
+          this.totalElements = res.data.totalElements
         }
       } catch (err: unknown) {
         const e = err as { data?: { message?: string }; message?: string }
@@ -89,7 +112,7 @@ export const useUsersStore = defineStore('users', {
       const { apiFetch } = useApi()
       const res = await apiFetch<ApiResponse<UserResponse>>(
         `/api/users/${userId}/roles/${roleId}`,
-        { method: 'DELETE' }
+        { method: 'DELETE' },
       )
       if (res.success && res.data) return res.data
       throw new Error(res.message || 'Remove role failed')

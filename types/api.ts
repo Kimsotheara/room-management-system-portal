@@ -117,3 +117,169 @@ export interface AssignRoleRequest {
   roleId: number
   expiresAt?: string
 }
+
+// ── Pagination ─────────────────────────────────────────────────────────────────
+
+export interface PageAbleRequest<T> {
+  pageNumber: number        // 1-based
+  size: number
+  sortProperty?: string
+  sortDirection?: 'asc' | 'desc'
+  parameter: T
+}
+
+export interface PageAbleResponse<D> {
+  last: boolean
+  totalPages: number
+  totalElements: number
+  size: number
+  pageNumber: number        // 1-based
+  row: number
+  sortProperty: string
+  sortDirection: string
+  list: D[]
+}
+
+// ── User Filter ────────────────────────────────────────────────────────────────
+
+export interface UserFilterRequest {
+  username?: string
+  email?: string
+  fullName?: string
+  phoneNumber?: string
+  isActive?: boolean
+  roleId?: number
+}
+
+// ── Room ───────────────────────────────────────────────────────────────────────
+
+export interface RoomImageResponse {
+  imageId: number
+  imageData: string         // Base64 encoded
+  displayOrder: number
+}
+
+export interface RoomTypeResponse {
+  roomTypeId: number
+  typeName: string
+  bed: number
+  price: number
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export enum RoomStatus {
+  AVAILABLE   = 'AVAILABLE',
+  BOOKING     = 'BOOKING',
+  OCCUPIED    = 'OCCUPIED',
+  MAINTENANCE = 'MAINTENANCE',
+  CLEANING    = 'CLEANING',
+}
+
+export interface RoomResponse {
+  roomId: number
+  roomNumber: string
+  roomType: RoomTypeResponse
+  roomStatus: RoomStatus | string
+  isActive: boolean
+  images: RoomImageResponse[]
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateRoomRequest {
+  roomNumber?: string       // optional per API spec (only roomTypeId is required)
+  roomTypeId: number
+  roomStatus?: RoomStatus
+}
+
+export interface UpdateRoomRequest {
+  roomNumber?: string
+  roomTypeId?: number
+  roomStatus?: RoomStatus
+  isActive?: boolean
+}
+
+export interface AddRoomImagesRequest {
+  images: string[]          // Base64 strings
+}
+
+export interface CreateRoomTypeRequest {
+  typeName?: string
+  bed?: number
+  price?: number
+}
+
+export interface UpdateRoomTypeRequest {
+  typeName?: string
+  bed?: number
+  price?: number
+  isActive?: boolean
+}
+
+// ── Hotel ──────────────────────────────────────────────────────────────────────
+
+export interface HotelResponse {
+  hotelId: number
+  hotelName: string
+  contact: string
+  address: string
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateHotelRequest {
+  hotelName?: string
+  contact?: string
+  address?: string
+}
+
+export interface UpdateHotelRequest {
+  hotelName?: string
+  contact?: string
+  address?: string
+  isActive?: boolean
+}
+
+// ── Guest ──────────────────────────────────────────────────────────────────────
+
+export interface GuestResponse {
+  guestId: number
+  firstName: string
+  lastName: string
+  email: string
+  phoneNumber: string
+  identityType: string
+  identityNumber: string
+  nationality: string
+  address: string
+  profileImage: string      // Base64 encoded
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateGuestRequest {
+  firstName?: string
+  lastName?: string
+  email?: string
+  phoneNumber?: string
+  identityType?: string
+  identityNumber?: string
+  nationality?: string
+  address?: string
+}
+
+export interface UpdateGuestRequest {
+  firstName?: string
+  lastName?: string
+  email?: string
+  phoneNumber?: string
+  identityType?: string
+  identityNumber?: string
+  nationality?: string
+  address?: string
+  isActive?: boolean
+}
