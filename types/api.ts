@@ -154,8 +154,8 @@ export interface UserFilterRequest {
 // ── Room ───────────────────────────────────────────────────────────────────────
 
 export interface RoomImageResponse {
-  imageId: number
-  imageData: string         // Base64 encoded
+  imageId:      number
+  imageData?:   string   // may be absent; use GET /api/rooms/{id}/images/{imageId}/file
   displayOrder: number
 }
 
@@ -255,7 +255,7 @@ export interface GuestResponse {
   identityNumber: string
   nationality: string
   address: string
-  profileImage: string      // Base64 encoded
+  profileImage?: string     // present only if returned inline; use GET /api/guests/{id}/profile-image for binary
   isActive: boolean
   createdAt: string
   updatedAt: string
@@ -270,6 +270,7 @@ export interface CreateGuestRequest {
   identityNumber?: string
   nationality?: string
   address?: string
+  profileImage?: string     // Base64
 }
 
 export interface UpdateGuestRequest {
@@ -281,5 +282,16 @@ export interface UpdateGuestRequest {
   identityNumber?: string
   nationality?: string
   address?: string
+  isActive?: boolean
+  profileImage?: string     // Base64; send empty string to remove
+}
+
+export interface GuestFilterRequest {
+  firstName?: string
+  lastName?: string
+  email?: string
+  phoneNumber?: string
+  nationality?: string
+  identityType?: string
   isActive?: boolean
 }

@@ -17,10 +17,11 @@
             :key="img.imageId"
             class="group relative aspect-square overflow-hidden rounded-xl bg-gray-100"
           >
-            <img
-              :src="`data:image/jpeg;base64,${img.imageData}`"
+            <RoomsRoomImage
+              :room-id="room.roomId"
+              :image-id="img.imageId"
               :alt="`Image ${img.imageId}`"
-              class="h-full w-full object-cover transition group-hover:brightness-75"
+              class="transition group-hover:brightness-75"
             />
             <!-- Delete overlay -->
             <button
@@ -149,6 +150,8 @@
 <script setup lang="ts">
 import type { RoomResponse } from '~/types/api'
 
+const { clearCache: clearImgCache } = useRoomImageSrc()
+
 const props = defineProps<{
   modelValue: boolean
   room: RoomResponse | null
@@ -243,6 +246,7 @@ async function deleteImage(imageId: number) {
   deletingId.value = imageId
   try {
     await store.deleteImage(props.room.roomId, imageId)
+    clearImgCache(props.room.roomId, imageId)
     emit('updated')
   } catch (err: unknown) {
     const e = err as { data?: { message?: string }; message?: string }

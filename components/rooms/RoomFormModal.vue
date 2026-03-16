@@ -93,10 +93,11 @@
               :key="img.imageId"
               class="group relative aspect-square overflow-hidden rounded-xl bg-gray-100"
             >
-              <img
-                :src="`data:image/jpeg;base64,${img.imageData}`"
+              <RoomsRoomImage
+                :room-id="room.roomId"
+                :image-id="img.imageId"
                 :alt="`Photo ${img.imageId}`"
-                class="h-full w-full object-cover transition group-hover:brightness-75"
+                class="transition group-hover:brightness-75"
               />
               <button
                 type="button"
@@ -203,7 +204,8 @@
 import type { RoomResponse } from '~/types/api'
 import { useRoomStatus } from '~/composables/useRoomStatus'
 
-const { statusOptions } = useRoomStatus()
+const { statusOptions }        = useRoomStatus()
+const { clearCache: clearImgCache } = useRoomImageSrc()
 
 const props = defineProps<{
   modelValue: boolean
@@ -320,6 +322,7 @@ async function deleteExistingImage(imageId: number) {
   deletingId.value = imageId
   try {
     await roomsStore.deleteImage(props.room.roomId, imageId)
+    clearImgCache(props.room.roomId, imageId)
     emit('saved')   // refresh parent list so updated image count shows
   } catch (err: unknown) {
     const e = err as { data?: { message?: string }; message?: string }
