@@ -218,6 +218,59 @@ export interface UpdateRoomTypeRequest {
   isActive?: boolean
 }
 
+// ── Service ────────────────────────────────────────────────────────────────────
+
+export interface ServiceResponse {
+  id: number
+  name: string
+  price: number
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateServiceRequest {
+  name?: string
+  price?: number
+}
+
+export interface UpdateServiceRequest {
+  name?: string
+  price?: number
+  isActive?: boolean
+}
+
+// ── Promotion ──────────────────────────────────────────────────────────────────
+
+export interface PromotionResponse {
+  id: number
+  name: string
+  discountType: string
+  discountValue: number
+  effectiveDate: string
+  expireDate: string
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreatePromotionRequest {
+  name?: string
+  discountType?: string
+  discountValue?: number
+  effectiveDate?: string   // ISO 8601
+  expireDate?: string      // ISO 8601
+}
+
+export interface UpdatePromotionRequest {
+  name?: string
+  discountType?: string
+  discountValue?: number
+  effectiveDate?: string
+  expireDate?: string
+  isActive?: boolean
+}
+
 // ── Hotel ──────────────────────────────────────────────────────────────────────
 
 export interface HotelResponse {
