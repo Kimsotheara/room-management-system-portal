@@ -1,77 +1,90 @@
 <template>
-  <div class="card p-6">
-    <h3 class="text-base font-semibold text-gray-900 mb-4">Recent Activity</h3>
-    <div class="space-y-4">
+  <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+    <div class="mb-4 flex items-center justify-between">
+      <h3 class="text-base font-semibold text-gray-900">Recent Rooms</h3>
+      <NuxtLink to="/dashboard/rooms" class="text-xs font-medium text-primary-600 hover:text-primary-700">View all</NuxtLink>
+    </div>
+
+    <!-- Loading -->
+    <div v-if="loading" class="space-y-4">
+      <div v-for="i in 5" :key="i" class="flex items-center gap-3">
+        <div class="h-10 w-10 animate-pulse rounded-xl bg-gray-100" />
+        <div class="flex-1 space-y-1.5">
+          <div class="h-3.5 w-32 animate-pulse rounded bg-gray-100" />
+          <div class="h-3 w-20 animate-pulse rounded bg-gray-100" />
+        </div>
+        <div class="h-5 w-16 animate-pulse rounded-full bg-gray-100" />
+      </div>
+    </div>
+
+    <!-- Empty -->
+    <div v-else-if="!recentRooms.length" class="flex flex-col items-center justify-center py-10 text-center">
+      <svg class="mb-2 h-8 w-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+      </svg>
+      <p class="text-sm text-gray-400">No rooms yet</p>
+    </div>
+
+    <!-- List -->
+    <div v-else class="space-y-3">
       <div
-        v-for="(item, index) in activities"
-        :key="index"
-        class="flex items-start gap-3"
+        v-for="room in recentRooms"
+        :key="room.roomId"
+        class="flex items-center gap-3"
       >
-        <div
-          class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm"
-          :class="item.iconBg"
-        >
-          <span v-html="item.icon" :class="item.iconColor" class="w-4 h-4" />
+        <!-- Cover image or placeholder -->
+        <div class="h-10 w-10 flex-shrink-0 overflow-hidden rounded-xl bg-gray-100">
+          <RoomsRoomImage
+            v-if="room.images?.length"
+            :room-id="room.roomId"
+            :image-id="room.images[0].imageId"
+            :alt="`Room ${room.roomNumber}`"
+          >
+            <template #placeholder>
+              <div class="flex h-full w-full items-center justify-center bg-gray-100">
+                <svg class="h-5 w-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+              </div>
+            </template>
+          </RoomsRoomImage>
+          <div v-else class="flex h-full w-full items-center justify-center">
+            <svg class="h-5 w-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+          </div>
         </div>
-        <div class="flex-1 min-w-0">
-          <p class="text-sm text-gray-800">
-            <span class="font-medium">{{ item.user }}</span>
-            {{ item.action }}
-            <span class="font-medium text-primary-600">{{ item.target }}</span>
+
+        <!-- Info -->
+        <div class="min-w-0 flex-1">
+          <p class="truncate text-sm font-medium text-gray-800">
+            {{ room.roomNumber ? `Room ${room.roomNumber}` : `Room #${room.roomId}` }}
           </p>
-          <p class="text-xs text-gray-400 mt-0.5">{{ item.time }}</p>
+          <p class="truncate text-xs text-gray-400">
+            {{ room.roomType?.typeName ?? '—' }} · {{ formatDate(room.createdAt) }}
+          </p>
         </div>
+
+        <!-- Status badge -->
+        <RoomsRoomStatusBadge :status="room.roomStatus" class="flex-shrink-0" />
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-const activities = [
-  {
-    user: 'Admin',
-    action: 'booked',
-    target: 'Conference Room A',
-    time: '2 minutes ago',
-    icon: '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>',
-    iconBg: 'bg-blue-100',
-    iconColor: 'text-blue-600',
-  },
-  {
-    user: 'John Doe',
-    action: 'checked in to',
-    target: 'Meeting Room 101',
-    time: '15 minutes ago',
-    icon: '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>',
-    iconBg: 'bg-green-100',
-    iconColor: 'text-green-600',
-  },
-  {
-    user: 'Jane Smith',
-    action: 'cancelled booking for',
-    target: 'Board Room',
-    time: '1 hour ago',
-    icon: '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>',
-    iconBg: 'bg-red-100',
-    iconColor: 'text-red-600',
-  },
-  {
-    user: 'System',
-    action: 'added new room',
-    target: 'Training Room 205',
-    time: '3 hours ago',
-    icon: '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>',
-    iconBg: 'bg-purple-100',
-    iconColor: 'text-purple-600',
-  },
-  {
-    user: 'Mike Johnson',
-    action: 'updated details for',
-    target: 'Executive Suite',
-    time: '5 hours ago',
-    icon: '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>',
-    iconBg: 'bg-yellow-100',
-    iconColor: 'text-yellow-600',
-  },
-]
+const roomsStore = useRoomsStore()
+
+const loading = computed(() => roomsStore.loading)
+
+const recentRooms = computed(() =>
+  [...roomsStore.items]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 6)
+)
+
+function formatDate(iso: string) {
+  if (!iso) return '—'
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
 </script>
