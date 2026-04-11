@@ -3,7 +3,7 @@
     :model-value="modelValue"
     :title="isEdit ? 'Edit Promotion' : 'Add Promotion'"
     :subtitle="isEdit ? `Editing ${promotion?.name}` : 'Fill in the promotion details below'"
-    size="md"
+    size="lg"
     @update:model-value="emit('update:modelValue', $event)"
   >
     <AuthFormAlert :message="apiError" class="mb-5" />
@@ -64,11 +64,7 @@
       <!-- Permanent checkbox -->
       <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-gray-200 px-4 py-3 transition-colors hover:bg-gray-50" :class="permanent ? 'border-primary-200 bg-primary-50/40' : ''">
         <div class="relative flex-shrink-0">
-          <input
-            v-model="permanent"
-            type="checkbox"
-            class="sr-only"
-          />
+          <input v-model="permanent" type="checkbox" class="sr-only" />
           <div
             class="flex h-5 w-5 items-center justify-center rounded border-2 transition-colors"
             :class="permanent ? 'border-primary-600 bg-primary-600' : 'border-gray-300 bg-white'"
@@ -103,8 +99,6 @@
           />
           <p v-if="errors.effectiveDate" class="mt-1 text-xs text-red-500">{{ errors.effectiveDate }}</p>
         </div>
-
-        <!-- Expiry date — hidden when permanent -->
         <div v-if="!permanent">
           <label class="mb-1.5 block text-sm font-medium text-gray-700">Expiry Date <span class="text-red-500">*</span></label>
           <input
@@ -115,6 +109,71 @@
             @change="errors.expireDate = ''"
           />
           <p v-if="errors.expireDate" class="mt-1 text-xs text-red-500">{{ errors.expireDate }}</p>
+        </div>
+      </div>
+
+      <!-- Room Types -->
+      <div>
+        <div class="mb-2 flex items-center justify-between">
+          <label class="text-sm font-medium text-gray-700">
+            Applies to Room Types
+            <span v-if="checkedRoomTypeIds.size > 0" class="ml-1.5 rounded-full bg-primary-100 px-2 py-0.5 text-xs text-primary-700">
+              {{ checkedRoomTypeIds.size }} selected
+            </span>
+          </label>
+          <div class="flex gap-2">
+            <button type="button" class="text-xs text-primary-500 hover:underline" @click="selectAllRoomTypes">All</button>
+            <span class="text-gray-300">|</span>
+            <button type="button" class="text-xs text-gray-400 hover:underline" @click="checkedRoomTypeIds = new Set()">None</button>
+          </div>
+        </div>
+
+        <div v-if="roomTypesStore.loading" class="flex items-center justify-center py-6">
+          <svg class="h-5 w-5 animate-spin text-primary-400" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+          </svg>
+        </div>
+
+        <div v-else-if="roomTypesStore.items.length === 0" class="rounded-xl border border-dashed border-gray-200 py-5 text-center text-sm text-gray-400">
+          No room types found
+        </div>
+
+        <div v-else class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <label
+            v-for="rt in roomTypesStore.items"
+            :key="rt.roomTypeId"
+            class="flex cursor-pointer items-center gap-3 rounded-xl border px-3.5 py-3 transition-colors hover:bg-gray-50"
+            :class="checkedRoomTypeIds.has(rt.roomTypeId)
+              ? 'border-primary-200 bg-primary-50/40'
+              : 'border-gray-200'"
+          >
+            <!-- Checkbox -->
+            <div class="relative flex-shrink-0">
+              <input
+                type="checkbox"
+                class="sr-only"
+                :checked="checkedRoomTypeIds.has(rt.roomTypeId)"
+                @change="toggleRoomType(rt.roomTypeId)"
+              />
+              <div
+                class="flex h-4.5 w-4.5 items-center justify-center rounded border-2 transition-colors"
+                style="width:1.125rem;height:1.125rem"
+                :class="checkedRoomTypeIds.has(rt.roomTypeId)
+                  ? 'border-primary-600 bg-primary-600'
+                  : 'border-gray-300 bg-white'"
+              >
+                <svg v-if="checkedRoomTypeIds.has(rt.roomTypeId)" class="h-2.5 w-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+            </div>
+            <!-- Info -->
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-sm font-medium text-gray-900">{{ rt.typeName }}</p>
+              <p class="text-xs text-gray-400">{{ rt.bed }} bed{{ rt.bed !== 1 ? 's' : '' }} · ${{ rt.price.toLocaleString() }}/night</p>
+            </div>
+          </label>
         </div>
       </div>
 
@@ -165,7 +224,7 @@
 </template>
 
 <script setup lang="ts">
-import type { PromotionResponse } from '~/types/api'
+import type { PromotionResponse, PromotionRoomTypeResponse } from '~/types/api'
 
 const props = defineProps<{
   modelValue: boolean
@@ -177,10 +236,11 @@ const emit = defineEmits<{
   saved: []
 }>()
 
-const store  = usePromotionsStore()
-const isEdit = computed(() => !!props.promotion)
+const store          = usePromotionsStore()
+const roomTypesStore = useRoomTypesStore()
+const isEdit         = computed(() => !!props.promotion)
 
-const apiError = ref<string | null>(null)
+const apiError  = ref<string | null>(null)
 const permanent = ref(false)
 
 const form = reactive({
@@ -196,26 +256,39 @@ const errors = reactive({
   name: '', discountType: '', discountValue: '', effectiveDate: '', expireDate: '',
 })
 
-// Returns current local datetime in "YYYY-MM-DDTHH:MM" format for datetime-local input
+// ── Room Types ────────────────────────────────────────────────────────────────
+// roomTypeId → assignment id (for edit: needed to DELETE removed ones)
+const assignmentMap      = ref<Map<number, number>>(new Map())
+const checkedRoomTypeIds = ref<Set<number>>(new Set())
+
+function toggleRoomType(id: number) {
+  const next = new Set(checkedRoomTypeIds.value)
+  if (next.has(id)) next.delete(id)
+  else              next.add(id)
+  checkedRoomTypeIds.value = next
+}
+
+function selectAllRoomTypes() {
+  checkedRoomTypeIds.value = new Set(roomTypesStore.items.map(rt => rt.roomTypeId))
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 function nowLocalString() {
   const d   = new Date()
   const pad = (n: number) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
-// Convert ISO string to datetime-local format ("YYYY-MM-DDTHH:MM")
 function toLocalInput(iso: string | undefined | null) {
   if (!iso) return ''
   return iso.slice(0, 16)
 }
 
-// Convert datetime-local value to ISO string
 function toISO(localStr: string) {
   if (!localStr) return undefined
   return new Date(localStr).toISOString()
 }
 
-// When permanent is toggled on → default effectiveDate to now, clear expiry error
 watch(permanent, (val) => {
   if (val) {
     if (!form.effectiveDate) form.effectiveDate = nowLocalString()
@@ -224,9 +297,15 @@ watch(permanent, (val) => {
   }
 })
 
-function resetForm() {
+// ── Reset ─────────────────────────────────────────────────────────────────────
+async function resetForm() {
   apiError.value = null
   Object.keys(errors).forEach(k => ((errors as Record<string, string>)[k] = ''))
+  assignmentMap.value      = new Map()
+  checkedRoomTypeIds.value = new Set()
+
+  // Load all room types
+  await roomTypesStore.fetchAll()
 
   if (props.promotion) {
     form.name          = props.promotion.name
@@ -237,13 +316,24 @@ function resetForm() {
     form.effectiveDate = toLocalInput(props.promotion.effectiveDate)
     form.expireDate    = toLocalInput(props.promotion.expireDate)
     form.isActive      = props.promotion.isActive
-    // Treat as permanent if no expiry date on the server record
     permanent.value    = !props.promotion.expireDate
+
+    // Load existing room type assignments
+    const assigned: PromotionRoomTypeResponse[] =
+      await store.getRoomTypes(props.promotion.id)
+    const aMap = new Map<number, number>()
+    const ids  = new Set<number>()
+    for (const a of assigned) {
+      aMap.set(a.roomTypeId, a.id)
+      ids.add(a.roomTypeId)
+    }
+    assignmentMap.value      = aMap
+    checkedRoomTypeIds.value = ids
   } else {
     form.name          = ''
     form.discountType  = ''
     form.discountValue = 0
-    form.effectiveDate = nowLocalString()   // default effective date to now
+    form.effectiveDate = nowLocalString()
     form.expireDate    = ''
     form.isActive      = true
     permanent.value    = false
@@ -252,6 +342,7 @@ function resetForm() {
 
 watch(() => props.modelValue, v => { if (v) resetForm() })
 
+// ── Validation ────────────────────────────────────────────────────────────────
 function validate() {
   let ok = true
   if (!form.name.trim())        { errors.name          = 'Name is required';           ok = false }
@@ -270,6 +361,7 @@ function validate() {
   return ok
 }
 
+// ── Submit ────────────────────────────────────────────────────────────────────
 async function handleSubmit() {
   if (!validate()) return
   apiError.value = null
@@ -283,11 +375,36 @@ async function handleSubmit() {
       effectiveDate: toISO(form.effectiveDate),
       expireDate:    permanent.value ? undefined : toISO(form.expireDate),
     }
+
+    let promotionId: number
+
     if (isEdit.value && props.promotion) {
       await store.update(props.promotion.id, { ...payload, isActive: form.isActive })
+      promotionId = props.promotion.id
+
+      // Diff room type assignments
+      const toAdd: number[] = []
+      for (const id of checkedRoomTypeIds.value) {
+        if (!assignmentMap.value.has(id)) toAdd.push(id)
+      }
+      const toRemove: number[] = []
+      for (const [roomTypeId, assignId] of assignmentMap.value) {
+        if (!checkedRoomTypeIds.value.has(roomTypeId)) toRemove.push(assignId)
+      }
+      await Promise.all([
+        toAdd.length    ? store.assignRoomTypes(promotionId, toAdd) : undefined,
+        ...toRemove.map(aid => store.removeRoomType(aid)),
+      ])
     } else {
-      await store.create(payload)
+      const created = await store.create(payload)
+      promotionId   = created.id
+
+      // Assign all selected room types to the new promotion
+      if (checkedRoomTypeIds.value.size > 0) {
+        await store.assignRoomTypes(promotionId, [...checkedRoomTypeIds.value])
+      }
     }
+
     emit('saved')
     emit('update:modelValue', false)
   } catch (err: unknown) {

@@ -144,7 +144,7 @@
               <!-- Validity -->
               <td class="px-5 py-4">
                 <p class="text-xs text-gray-700">{{ formatDate(promo.effectiveDate) }}</p>
-                <p class="text-xs text-gray-400">→ {{ formatDate(promo.expireDate) }}</p>
+                <p class="text-xs text-gray-400">→ {{ promo.expireDate ? formatDate(promo.expireDate) : 'No expiry' }}</p>
               </td>
 
               <!-- Status -->
@@ -160,7 +160,19 @@
 
               <!-- Actions -->
               <td class="px-5 py-4">
-                <div class="flex items-center justify-end gap-1">
+                <div class="flex flex-wrap items-center justify-end gap-1.5">
+                  <button
+                    class="inline-flex items-center gap-1.5 rounded-lg border border-violet-200 bg-violet-50 px-2.5 py-1.5 text-xs font-medium text-violet-700 transition-colors hover:bg-violet-100"
+                    @click="openRoomTypes(promo)"
+                  >
+                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
+                    </svg>
+                    Room Types
+                    <span v-if="promo.roomTypes?.length" class="rounded-full bg-violet-200 px-1.5 text-violet-800">
+                      {{ promo.roomTypes.length }}
+                    </span>
+                  </button>
                   <button
                     class="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-primary-50 hover:text-primary-600"
                     title="Edit promotion"
@@ -200,6 +212,7 @@
 
     <!-- Modals -->
     <PromotionsPromotionFormModal v-model="showForm" :promotion="selectedPromo" @saved="onSaved" />
+    <PromotionsPromotionRoomTypesModal v-model="showRoomTypes" :promotion="selectedPromo" @saved="onRoomTypesSaved" />
     <UiConfirmDialog
       v-model="showDelete"
       title="Delete Promotion"
@@ -251,13 +264,15 @@ const pagedItems = computed(() => {
 watch([keyword, filterStatus, filterDiscountType], () => { currentPage.value = 0 })
 
 // ── Modal state ───────────────────────────────────────────────────────────────
-const showForm     = ref(false)
-const showDelete   = ref(false)
+const showForm      = ref(false)
+const showDelete    = ref(false)
+const showRoomTypes = ref(false)
 const selectedPromo = ref<PromotionResponse | null>(null)
 
-function openCreate() { selectedPromo.value = null; showForm.value = true }
-function openEdit(p: PromotionResponse) { selectedPromo.value = p; showForm.value = true }
-function openDelete(p: PromotionResponse) { selectedPromo.value = p; showDelete.value = true }
+function openCreate()                     { selectedPromo.value = null; showForm.value = true }
+function openEdit(p: PromotionResponse)   { selectedPromo.value = p;    showForm.value = true }
+function openDelete(p: PromotionResponse) { selectedPromo.value = p;    showDelete.value = true }
+function openRoomTypes(p: PromotionResponse) { selectedPromo.value = p; showRoomTypes.value = true }
 
 // ── Toast ────────────────────────────────────────────────────────────────────
 const toast = ref<{ type: 'success' | 'error'; message: string } | null>(null)
@@ -272,6 +287,11 @@ function showToast(type: 'success' | 'error', message: string) {
 // ── Handlers ─────────────────────────────────────────────────────────────────
 function onSaved() {
   showToast('success', selectedPromo.value ? 'Promotion updated' : 'Promotion added successfully')
+  store.fetchAll()
+}
+
+function onRoomTypesSaved() {
+  showToast('success', 'Room types updated')
   store.fetchAll()
 }
 
@@ -305,11 +325,12 @@ function formatDate(iso: string) {
 
 function promoStatusLabel(p: PromotionResponse) {
   if (!p.isActive) return 'Inactive'
-  const now = Date.now()
+  const now   = Date.now()
   const start = new Date(p.effectiveDate).getTime()
-  const end   = new Date(p.expireDate).getTime()
   if (now < start) return 'Upcoming'
-  if (now > end)   return 'Expired'
+  if (!p.expireDate) return 'Active'   // permanent
+  const end = new Date(p.expireDate).getTime()
+  if (now > end) return 'Expired'
   return 'Active'
 }
 

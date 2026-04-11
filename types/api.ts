@@ -248,8 +248,9 @@ export interface PromotionResponse {
   discountType: string
   discountValue: number
   effectiveDate: string
-  expireDate: string
+  expireDate?: string
   isActive: boolean
+  roomTypes?: RoomTypeResponse[]
   createdAt: string
   updatedAt: string
 }
@@ -347,4 +348,133 @@ export interface GuestFilterRequest {
   nationality?: string
   identityType?: string
   isActive?: boolean
+}
+
+// ── Reservation ────────────────────────────────────────────────────────────────
+
+export interface ReservationRoomRequest {
+  roomId: number
+  promotionId?: number
+}
+
+export interface CreateReservationRequest {
+  guestId: number
+  checkInDate: string       // ISO 8601
+  checkOutDate: string      // ISO 8601
+  rooms?: ReservationRoomRequest[]
+  notes?: string
+}
+
+export interface UpdateReservationRequest {
+  notes?: string
+}
+
+export interface PaymentRequest {
+  amount: number
+}
+
+export interface ReservationRoomResponse {
+  id: number
+  roomId: number
+  roomNumber: string
+  roomTypeName: string
+  promotionId?: number
+  promotionName?: string
+  basePrice: number
+  discountAmount: number
+  finalPrice: number
+}
+
+export interface ServiceUsageResponse {
+  id: number
+  reservationId: number
+  serviceId: number
+  serviceName: string
+  quantity: number
+  unitPrice: number
+  totalPrice: number
+  createdAt: string
+}
+
+export interface ReservationResponse {
+  id: number
+  guestId: number
+  guestName: string
+  checkInDate: string
+  checkOutDate: string
+  nights: number
+  totalAmount: number
+  paidAmount: number
+  balanceAmount: number
+  paymentStatus: string
+  status: string
+  notes?: string
+  rooms: ReservationRoomResponse[]
+  serviceChargeTotal: number
+  serviceUsages: ServiceUsageResponse[]
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface AddServiceUsageRequest {
+  reservationId: number
+  serviceId: number
+  quantity: number
+}
+
+export interface RoomLineDto {
+  roomNumber: string
+  roomTypeName: string
+  nights: number
+  ratePerNight: number
+  basePrice: number
+  promotionName?: string
+  discountAmount: number
+  finalPrice: number
+}
+
+export interface ServiceLineDto {
+  serviceName: string
+  quantity: number
+  unitPrice: number
+  totalPrice: number
+}
+
+export interface InvoiceResponse {
+  reservationId: number
+  generatedAt: string
+  guestName: string
+  guestEmail: string
+  guestPhone: string
+  checkInDate: string
+  checkOutDate: string
+  nights: number
+  reservationStatus: string
+  notes?: string
+  roomCharges: RoomLineDto[]
+  roomChargeTotal: number
+  serviceCharges: ServiceLineDto[]
+  serviceChargeTotal: number
+  totalAmount: number
+  paidAmount: number
+  balanceAmount: number
+  paymentStatus: string
+}
+
+// ── Promotion Room Type ────────────────────────────────────────────────────────
+
+export interface AssignPromotionRoomTypeRequest {
+  promotionId:  number
+  roomTypeIds:  number[]
+}
+
+export interface PromotionRoomTypeResponse {
+  id: number
+  promotionId: number
+  promotionName: string
+  roomTypeId: number
+  roomTypeName: string
+  isActive: boolean
+  createdAt: string
 }
