@@ -221,55 +221,132 @@
 
       <!-- ── Payment tab ────────────────────────────────────────────────────── -->
       <div v-else-if="activeTab === 'payment'">
-        <!-- Summary -->
-        <div class="mb-5 grid grid-cols-3 gap-3">
-          <div class="rounded-xl border border-gray-100 bg-white p-4 text-center shadow-sm">
-            <p class="text-xs text-gray-400">Total Amount</p>
-            <p class="mt-1 text-lg font-bold text-gray-900">{{ fmtCurrency(reservation.totalAmount) }}</p>
+        <!-- Charge breakdown -->
+        <div class="mb-5 rounded-xl border border-gray-200 divide-y divide-gray-100">
+          <div class="flex items-center justify-between px-4 py-3 text-sm">
+            <span class="text-gray-500">Room Charges</span>
+            <span class="font-medium text-gray-900">{{ fmtCurrency(reservation.totalAmount - reservation.serviceChargeTotal) }}</span>
           </div>
-          <div class="rounded-xl border border-green-100 bg-green-50 p-4 text-center">
-            <p class="text-xs text-green-600">Paid</p>
-            <p class="mt-1 text-lg font-bold text-green-700">{{ fmtCurrency(reservation.paidAmount) }}</p>
+          <div class="flex items-center justify-between px-4 py-3 text-sm">
+            <span class="text-gray-500">Service Charges</span>
+            <span class="font-medium text-gray-900">{{ fmtCurrency(reservation.serviceChargeTotal) }}</span>
           </div>
-          <div class="rounded-xl border p-4 text-center" :class="reservation.balanceAmount > 0 ? 'border-red-100 bg-red-50' : 'border-gray-100 bg-white'">
-            <p class="text-xs" :class="reservation.balanceAmount > 0 ? 'text-red-500' : 'text-gray-400'">Balance</p>
-            <p class="mt-1 text-lg font-bold" :class="reservation.balanceAmount > 0 ? 'text-red-600' : 'text-gray-400'">
+          <div class="flex items-center justify-between bg-gray-50 px-4 py-3 text-sm">
+            <span class="font-semibold text-gray-700">Total</span>
+            <span class="font-bold text-gray-900">{{ fmtCurrency(reservation.totalAmount) }}</span>
+          </div>
+          <div class="flex items-center justify-between px-4 py-3 text-sm">
+            <span class="text-green-600">Paid</span>
+            <span class="font-semibold text-green-700">{{ fmtCurrency(reservation.paidAmount) }}</span>
+          </div>
+          <div class="flex items-center justify-between px-4 py-3 text-sm" :class="reservation.balanceAmount > 0 ? 'bg-red-50' : 'bg-green-50'">
+            <span :class="reservation.balanceAmount > 0 ? 'text-red-600' : 'text-green-600'">Balance Due</span>
+            <span class="font-bold" :class="reservation.balanceAmount > 0 ? 'text-red-700' : 'text-green-700'">
               {{ fmtCurrency(reservation.balanceAmount) }}
-            </p>
+            </span>
           </div>
         </div>
 
-        <!-- Add payment -->
-        <div v-if="reservation.balanceAmount > 0" class="rounded-xl border border-gray-200 p-4">
-          <p class="mb-3 text-sm font-medium text-gray-700">Add Payment</p>
+        <!-- Add payment form -->
+        <div v-if="reservation.balanceAmount > 0" class="mb-5 rounded-xl border border-gray-200 p-4">
+          <p class="mb-3 text-sm font-semibold text-gray-700">Record Payment</p>
           <AuthFormAlert :message="paymentError" class="mb-3" />
-          <div class="flex gap-3">
-            <div class="relative flex-1">
-              <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-gray-400">$</span>
-              <input
-                v-model.number="paymentAmount"
-                type="number"
-                min="0.01"
-                :max="reservation.balanceAmount"
-                step="0.01"
-                placeholder="0.00"
-                class="block w-full rounded-xl border border-gray-200 py-2.5 pl-8 pr-3.5 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <!-- Method -->
+            <div>
+              <label class="mb-1 block text-xs font-medium text-gray-600">Payment Method <span class="text-red-500">*</span></label>
+              <select
+                v-model="paymentMethod"
+                class="block w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-gray-700 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary-500"
+              >
+                <option value="">— Select method —</option>
+                <option value="CASH">Cash</option>
+                <option value="CARD">Card</option>
+                <option value="BANK_TRANSFER">Bank Transfer</option>
+                <option value="ONLINE">Online</option>
+              </select>
             </div>
-            <button
-              :disabled="store.submitting || !paymentAmount || paymentAmount <= 0"
-              class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-700 disabled:opacity-50"
-              @click="doPayment"
-            >Pay</button>
+            <!-- Type -->
+            <div>
+              <label class="mb-1 block text-xs font-medium text-gray-600">Payment Type <span class="text-red-500">*</span></label>
+              <select
+                v-model="paymentType"
+                class="block w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-gray-700 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary-500"
+              >
+                <option value="">— Select type —</option>
+                <option value="DEPOSIT">Deposit</option>
+                <option value="PARTIAL">Partial</option>
+                <option value="FULL">Full Payment</option>
+              </select>
+            </div>
+            <!-- Amount -->
+            <div class="sm:col-span-2">
+              <label class="mb-1 block text-xs font-medium text-gray-600">Amount <span class="text-red-500">*</span></label>
+              <div class="flex gap-3">
+                <div class="relative flex-1">
+                  <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-gray-400">$</span>
+                  <input
+                    v-model.number="paymentAmount"
+                    type="number"
+                    min="0.01"
+                    :max="reservation.balanceAmount"
+                    step="0.01"
+                    placeholder="0.00"
+                    class="block w-full rounded-xl border border-gray-200 py-2.5 pl-8 pr-3.5 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  />
+                </div>
+                <button
+                  :disabled="store.submitting || !paymentAmount || paymentAmount <= 0 || !paymentMethod || !paymentType"
+                  class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-700 disabled:opacity-50"
+                  @click="doPayment"
+                >Pay</button>
+              </div>
+              <button
+                type="button"
+                class="mt-1.5 text-xs text-primary-500 hover:underline"
+                @click="paymentAmount = reservation.balanceAmount; paymentType = 'FULL'"
+              >Pay full balance ({{ fmtCurrency(reservation.balanceAmount) }})</button>
+            </div>
           </div>
-          <button
-            type="button"
-            class="mt-2 text-xs text-primary-500 hover:underline"
-            @click="paymentAmount = reservation.balanceAmount"
-          >Pay full balance ({{ fmtCurrency(reservation.balanceAmount) }})</button>
         </div>
-        <div v-else class="rounded-xl border border-green-100 bg-green-50 px-4 py-3 text-sm text-green-700">
+        <div v-else class="mb-5 rounded-xl border border-green-100 bg-green-50 px-4 py-3 text-sm text-green-700">
           Payment complete. No balance remaining.
+        </div>
+
+        <!-- Payment history -->
+        <div>
+          <p class="mb-2 text-sm font-semibold text-gray-700">Payment History</p>
+          <div v-if="loadingPayments" class="flex items-center justify-center py-6">
+            <svg class="h-5 w-5 animate-spin text-primary-400" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+          </div>
+          <div v-else-if="payments.length === 0" class="rounded-xl border border-dashed border-gray-200 py-6 text-center text-sm text-gray-400">
+            No payments recorded yet.
+          </div>
+          <div v-else class="overflow-hidden rounded-xl border border-gray-200">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="border-b border-gray-100 bg-gray-50">
+                  <th class="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Date</th>
+                  <th class="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Method</th>
+                  <th class="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Type</th>
+                  <th class="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">Amount</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100">
+                <tr v-for="p in payments" :key="p.id" class="hover:bg-gray-50">
+                  <td class="px-4 py-3 text-gray-600">{{ fmtDate(p.paymentDate) }}</td>
+                  <td class="px-4 py-3">
+                    <span class="rounded-md bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">{{ p.paymentMethod }}</span>
+                  </td>
+                  <td class="px-4 py-3 text-gray-500 text-xs">{{ p.paymentType }}</td>
+                  <td class="px-4 py-3 text-right font-semibold text-gray-900">{{ fmtCurrency(p.amount) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -363,6 +440,25 @@
             </table>
           </div>
 
+          <!-- Payments -->
+          <div v-if="invoice.payments?.length" class="overflow-hidden rounded-xl border border-gray-200">
+            <div class="border-b border-gray-100 bg-gray-50 px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-gray-500">
+              Payments Received
+            </div>
+            <table class="w-full text-sm">
+              <tbody class="divide-y divide-gray-100">
+                <tr v-for="p in invoice.payments" :key="p.id">
+                  <td class="px-4 py-3 text-gray-600">{{ fmtDate(p.paymentDate) }}</td>
+                  <td class="px-4 py-3">
+                    <span class="rounded-md bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">{{ p.paymentMethod }}</span>
+                  </td>
+                  <td class="px-4 py-3 text-xs text-gray-500">{{ p.paymentType }}</td>
+                  <td class="px-4 py-3 text-right font-semibold text-green-700">{{ fmtCurrency(p.amount) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
           <!-- Final summary -->
           <div class="rounded-xl border border-gray-200 bg-gray-50 p-4">
             <div class="space-y-2 text-sm">
@@ -395,7 +491,7 @@
 </template>
 
 <script setup lang="ts">
-import type { ReservationResponse, InvoiceResponse } from '~/types/api'
+import type { ReservationResponse, InvoiceResponse, PaymentResponse } from '~/types/api'
 
 const props = defineProps<{
   modelValue:    boolean
@@ -446,6 +542,7 @@ async function loadInvoice() {
 function onTabChange(tab: typeof activeTab.value) {
   activeTab.value = tab
   if (tab === 'invoice') loadInvoice()
+  if (tab === 'payment') loadPayments()
 }
 
 // ── Load reservation ──────────────────────────────────────────────────────────
@@ -468,12 +565,14 @@ watch(() => props.modelValue, async (v) => {
     activeTab.value   = props.initialTab ?? 'overview'
     reservation.value = null
     invoice.value     = null
+    payments.value    = []
     actionError.value = null
     await Promise.all([
       loadReservation(),
       servicesStore.fetchAll(),
     ])
     if (activeTab.value === 'invoice') loadInvoice()
+    if (activeTab.value === 'payment') loadPayments()
   }
 })
 
@@ -531,15 +630,39 @@ async function removeService(usageId: number) {
 
 // ── Payment ───────────────────────────────────────────────────────────────────
 const paymentAmount = ref<number | null>(null)
+const paymentMethod = ref('')
+const paymentType   = ref('')
 const paymentError  = ref<string | null>(null)
+const payments      = ref<PaymentResponse[]>([])
+const loadingPayments = ref(false)
+
+async function loadPayments() {
+  if (!props.reservationId) return
+  loadingPayments.value = true
+  try {
+    payments.value = await store.getPayments(props.reservationId)
+  } finally {
+    loadingPayments.value = false
+  }
+}
 
 async function doPayment() {
   if (!props.reservationId || !paymentAmount.value || paymentAmount.value <= 0) return
+  if (!paymentMethod.value || !paymentType.value) return
   paymentError.value = null
   try {
-    reservation.value = await store.addPayment(props.reservationId, paymentAmount.value)
+    await store.addPayment({
+      reservationId: props.reservationId,
+      paymentMethod: paymentMethod.value,
+      paymentType:   paymentType.value,
+      amount:        paymentAmount.value,
+    })
     paymentAmount.value = null
+    paymentMethod.value = ''
+    paymentType.value   = ''
     invoice.value       = null
+    reservation.value   = await store.fetchById(props.reservationId)
+    await loadPayments()
     emit('updated')
   } catch (err: unknown) {
     const e = err as { data?: { message?: string }; message?: string }

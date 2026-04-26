@@ -5,6 +5,7 @@ import type {
   CreateReservationRequest,
   UpdateReservationRequest,
   PaymentRequest,
+  PaymentResponse,
   InvoiceResponse,
   ServiceUsageResponse,
   AddServiceUsageRequest,
@@ -127,19 +128,27 @@ export const useReservationsStore = defineStore('reservations', {
       }
     },
 
-    async addPayment(id: number, amount: number): Promise<ReservationResponse> {
+    async addPayment(data: PaymentRequest): Promise<PaymentResponse> {
       const { apiFetch } = useApi()
       this.submitting = true
       try {
-        const res = await apiFetch<ApiResponse<ReservationResponse>>(
-          `/api/reservations/${id}/payments`,
-          { method: 'POST', body: { amount } as PaymentRequest },
-        )
+        const res = await apiFetch<ApiResponse<PaymentResponse>>('/api/payments', {
+          method: 'POST',
+          body:   data,
+        })
         if (res.success && res.data) return res.data
         throw new Error(res.message || 'Payment failed')
       } finally {
         this.submitting = false
       }
+    },
+
+    async getPayments(reservationId: number): Promise<PaymentResponse[]> {
+      const { apiFetch } = useApi()
+      const res = await apiFetch<ApiResponse<PaymentResponse[]>>(
+        `/api/payments/reservation/${reservationId}`,
+      )
+      return res.data ?? []
     },
 
     async getInvoice(id: number): Promise<InvoiceResponse> {
