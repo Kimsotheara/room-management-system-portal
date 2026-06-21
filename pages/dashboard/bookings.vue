@@ -179,19 +179,58 @@
               <!-- Actions -->
               <td class="px-5 py-4">
                 <div class="flex flex-wrap items-center justify-end gap-1.5">
-                  <!-- Services badge (CHECKED_IN) -->
-                  <button
-                    v-if="res.status === 'CHECKED_IN'"
-                    class="inline-flex items-center gap-1 rounded-lg border border-green-200 bg-green-50 px-2.5 py-1.5 text-xs font-medium text-green-700 transition-colors hover:bg-green-100"
-                    title="Manage services"
-                    @click="openDetail(res.id, 'services')"
-                  >
-                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                    </svg>
-                    Services
-                    <span v-if="res.serviceUsages?.length" class="rounded-full bg-green-200 px-1.5 text-green-800">{{ res.serviceUsages.length }}</span>
-                  </button>
+                  <!-- CONFIRMED: Check In + Cancel -->
+                  <template v-if="res.status === 'CONFIRMED'">
+                    <button
+                      :disabled="store.submitting"
+                      class="inline-flex items-center gap-1 rounded-lg border border-green-200 bg-green-50 px-2.5 py-1.5 text-xs font-medium text-green-700 transition-colors hover:bg-green-100 disabled:opacity-50"
+                      title="Check in"
+                      @click="quickAction('checkIn', res)"
+                    >
+                      <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                      Check In
+                    </button>
+                    <button
+                      :disabled="store.submitting"
+                      class="inline-flex items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-100 disabled:opacity-50"
+                      title="Cancel booking"
+                      @click="openCancel(res)"
+                    >
+                      <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                      Cancel
+                    </button>
+                  </template>
+
+                  <!-- CHECKED_IN: Services + Check Out -->
+                  <template v-else-if="res.status === 'CHECKED_IN'">
+                    <button
+                      class="inline-flex items-center gap-1 rounded-lg border border-green-200 bg-green-50 px-2.5 py-1.5 text-xs font-medium text-green-700 transition-colors hover:bg-green-100"
+                      title="Manage services"
+                      @click="openDetail(res.id, 'services')"
+                    >
+                      <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                      </svg>
+                      Services
+                      <span v-if="res.serviceUsages?.length" class="rounded-full bg-green-200 px-1.5 text-green-800">{{ res.serviceUsages.length }}</span>
+                    </button>
+                    <button
+                      :disabled="store.submitting"
+                      class="inline-flex items-center gap-1 rounded-lg border border-purple-200 bg-purple-50 px-2.5 py-1.5 text-xs font-medium text-purple-700 transition-colors hover:bg-purple-100 disabled:opacity-50"
+                      title="Check out"
+                      @click="quickAction('checkOut', res)"
+                    >
+                      <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                      </svg>
+                      Check Out
+                    </button>
+                  </template>
+
                   <!-- View -->
                   <button
                     class="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-primary-50 hover:text-primary-600"
@@ -252,6 +291,15 @@
       :loading="store.submitting"
       @confirm="handleDelete"
     />
+    <UiConfirmDialog
+      v-model="showCancel"
+      title="Cancel Booking"
+      :message="`Cancel reservation #${selectedRes?.id} for ${selectedRes?.guestName}?`"
+      detail="The booked rooms will be released back to available."
+      confirm-label="Cancel Booking"
+      :loading="store.submitting"
+      @confirm="handleCancel"
+    />
   </div>
 </template>
 
@@ -310,6 +358,7 @@ watch([activeTab, keyword, filterPayment], () => { currentPage.value = 0 })
 const showForm      = ref(false)
 const showDetail    = ref(false)
 const showDelete    = ref(false)
+const showCancel    = ref(false)
 const selectedId    = ref<number | null>(null)
 const selectedTab   = ref<'overview' | 'services' | 'payment' | 'invoice'>('overview')
 const selectedRes   = ref<ReservationResponse | null>(null)
@@ -323,6 +372,36 @@ function openDetail(id: number, tab: 'overview' | 'services' | 'payment' | 'invo
 function openDelete(res: ReservationResponse) {
   selectedRes.value = res
   showDelete.value  = true
+}
+
+function openCancel(res: ReservationResponse) {
+  selectedRes.value = res
+  showCancel.value  = true
+}
+
+async function quickAction(action: 'checkIn' | 'checkOut', res: ReservationResponse) {
+  try {
+    await store[action](res.id)
+    const labels = { checkIn: 'Checked in', checkOut: 'Checked out' }
+    showToast('success', `${labels[action]}: ${res.guestName} #${res.id}`)
+    await store.fetchAll()
+  } catch (err: unknown) {
+    const e = err as { data?: { message?: string }; message?: string }
+    showToast('error', e?.data?.message || e?.message || 'Action failed')
+  }
+}
+
+async function handleCancel() {
+  if (!selectedRes.value) return
+  try {
+    await store.cancel(selectedRes.value.id)
+    showCancel.value = false
+    showToast('success', `Booking #${selectedRes.value.id} cancelled`)
+    await store.fetchAll()
+  } catch (err: unknown) {
+    const e = err as { data?: { message?: string }; message?: string }
+    showToast('error', e?.data?.message || e?.message || 'Cancel failed')
+  }
 }
 
 // ── Toast ─────────────────────────────────────────────────────────────────────

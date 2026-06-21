@@ -171,10 +171,10 @@ export interface RoomTypeResponse {
 
 export enum RoomStatus {
   AVAILABLE   = 'AVAILABLE',
-  BOOKING     = 'BOOKING',
+  RESERVED    = 'RESERVED',
   OCCUPIED    = 'OCCUPIED',
-  MAINTENANCE = 'MAINTENANCE',
   CLEANING    = 'CLEANING',
+  MAINTENANCE = 'MAINTENANCE',
 }
 
 export interface RoomResponse {
@@ -370,7 +370,29 @@ export interface UpdateReservationRequest {
 }
 
 export interface PaymentRequest {
+  reservationId: number
+  paymentMethod: string
+  paymentType: string
   amount: number
+}
+
+export interface PaymentResponse {
+  id: number
+  reservationId: number
+  paymentMethod: string
+  amount: number
+  paymentDate: string
+  paymentType: string
+  isActive: boolean
+  createdAt: string
+}
+
+export interface PaymentLineDto {
+  id: number
+  paymentMethod: string
+  paymentType: string
+  amount: number
+  paymentDate: string
 }
 
 export interface ReservationRoomResponse {
@@ -456,6 +478,7 @@ export interface InvoiceResponse {
   roomChargeTotal: number
   serviceCharges: ServiceLineDto[]
   serviceChargeTotal: number
+  payments: PaymentLineDto[]
   totalAmount: number
   paidAmount: number
   balanceAmount: number
@@ -477,4 +500,50 @@ export interface PromotionRoomTypeResponse {
   roomTypeName: string
   isActive: boolean
   createdAt: string
+}
+// ── Reports ────────────────────────────────────────────────────────────────────
+
+export interface PaymentMethodSummaryDto {
+  paymentMethod: string
+  count: number
+  amount: number
+}
+
+export interface DashboardResponse {
+  totalRooms: number
+  availableRooms: number
+  reservedRooms: number
+  occupiedRooms: number
+  maintenanceRooms: number
+  cleaningRooms: number
+  occupancyRate: number
+  todayCheckIns: number
+  todayCheckOuts: number
+  confirmedReservations: number
+  checkedInReservations: number
+  pendingPaymentReservations: number
+  monthlyRevenue: number
+  monthlyPaid: number
+  monthlyBalance: number
+}
+
+export interface RevenueReportResponse {
+  from: string
+  to: string
+  totalRoomCharges: number
+  totalServiceCharges: number
+  totalRevenue: number
+  totalPaid: number
+  totalBalance: number
+  byPaymentMethod: PaymentMethodSummaryDto[]
+}
+
+export interface ReservationReportResponse {
+  from: string
+  to: string
+  total: number
+  confirmed: number
+  checkedIn: number
+  checkedOut: number
+  cancelled: number
 }

@@ -13,41 +13,90 @@
       <!-- Guest -->
       <div>
         <label class="mb-1.5 block text-sm font-medium text-gray-700">Guest <span class="text-red-500">*</span></label>
-        <div class="relative">
+
+        <!-- Selected guest chip -->
+        <div
+          v-if="selectedGuest"
+          class="mb-2 flex items-center gap-3 rounded-xl border border-primary-200 bg-primary-50 px-3.5 py-2.5"
+        >
+          <div class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary-600 text-xs font-bold text-white">
+            {{ selectedGuest.firstName[0] }}{{ selectedGuest.lastName[0] }}
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="truncate text-sm font-medium text-primary-900">{{ selectedGuest.firstName }} {{ selectedGuest.lastName }}</p>
+            <p class="truncate text-xs text-primary-600">{{ selectedGuest.email }} · {{ selectedGuest.phoneNumber }}</p>
+          </div>
+          <button
+            type="button"
+            class="flex-shrink-0 rounded-lg p-1 text-primary-400 transition hover:bg-primary-100 hover:text-primary-600"
+            @click="clearGuest"
+          >
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Search input (hidden once guest is selected) -->
+        <div v-else class="relative">
+          <svg class="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
           <input
             v-model="guestSearch"
             type="text"
-            placeholder="Search guest by name or email…"
-            class="block w-full rounded-xl border px-3.5 py-2.5 text-sm placeholder-gray-400 shadow-sm transition focus:border-transparent focus:outline-none focus:ring-2"
+            placeholder="Search by name or email…"
+            autocomplete="off"
+            class="block w-full rounded-xl border py-2.5 pl-10 pr-3.5 text-sm placeholder-gray-400 shadow-sm transition focus:border-transparent focus:outline-none focus:ring-2"
             :class="errors.guestId ? 'border-red-400 focus:ring-red-400' : 'border-gray-200 focus:ring-primary-500'"
             @focus="showGuestDropdown = true"
             @blur="onGuestBlur"
             @input="errors.guestId = ''"
           />
+
           <!-- Dropdown -->
           <div
-            v-if="showGuestDropdown && filteredGuests.length > 0"
+            v-if="showGuestDropdown"
             class="absolute z-10 mt-1 w-full overflow-auto rounded-xl border border-gray-200 bg-white shadow-lg"
-            style="max-height:200px"
+            style="max-height:220px"
           >
-            <button
-              v-for="g in filteredGuests"
-              :key="g.guestId"
-              type="button"
-              class="flex w-full flex-col px-3.5 py-2.5 text-left text-sm hover:bg-primary-50"
-              @mousedown.prevent="selectGuest(g)"
+            <!-- Loading -->
+            <div v-if="guestsStore.loading" class="flex items-center justify-center py-6">
+              <svg class="h-5 w-5 animate-spin text-primary-400" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+            </div>
+
+            <!-- No results -->
+            <div
+              v-else-if="filteredGuests.length === 0"
+              class="px-3.5 py-4 text-center text-sm text-gray-400"
             >
-              <span class="font-medium text-gray-900">{{ g.firstName }} {{ g.lastName }}</span>
-              <span class="text-xs text-gray-400">{{ g.email }} · {{ g.phoneNumber }}</span>
-            </button>
+              {{ guestSearch.trim() ? `No guests found for "${guestSearch}"` : 'No guests available' }}
+            </div>
+
+            <!-- Results -->
+            <template v-else>
+              <button
+                v-for="g in filteredGuests"
+                :key="g.guestId"
+                type="button"
+                class="flex w-full items-center gap-3 px-3.5 py-2.5 text-left text-sm transition hover:bg-primary-50"
+                @mousedown.prevent="selectGuest(g)"
+              >
+                <div class="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700">
+                  {{ g.firstName[0] }}{{ g.lastName[0] }}
+                </div>
+                <div class="min-w-0 flex-1">
+                  <p class="truncate font-medium text-gray-900">{{ g.firstName }} {{ g.lastName }}</p>
+                  <p class="truncate text-xs text-gray-400">{{ g.email }} · {{ g.phoneNumber }}</p>
+                </div>
+              </button>
+            </template>
           </div>
-          <p v-if="selectedGuest" class="mt-1.5 flex items-center gap-1.5 text-xs text-primary-600">
-            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-            </svg>
-            Selected: {{ selectedGuest.firstName }} {{ selectedGuest.lastName }}
-          </p>
         </div>
+
         <p v-if="errors.guestId" class="mt-1 text-xs text-red-500">{{ errors.guestId }}</p>
       </div>
 
@@ -214,6 +263,13 @@ const filteredGuests = computed(() => {
 function selectGuest(g: GuestResponse) {
   selectedGuest.value     = g
   guestSearch.value       = `${g.firstName} ${g.lastName}`
+  showGuestDropdown.value = false
+  errors.guestId          = ''
+}
+
+function clearGuest() {
+  selectedGuest.value     = null
+  guestSearch.value       = ''
   showGuestDropdown.value = false
   errors.guestId          = ''
 }

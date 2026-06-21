@@ -21,9 +21,11 @@
             <p class="text-sm font-medium text-gray-500">Total Rooms</p>
             <p class="mt-1 text-2xl font-bold text-gray-900">
               <span v-if="loading" class="inline-block h-7 w-12 animate-pulse rounded-lg bg-gray-200" />
-              <span v-else>{{ roomsStore.items.length }}</span>
+              <span v-else>{{ dash?.totalRooms ?? '—' }}</span>
             </p>
-            <p class="mt-1 text-xs text-gray-400">{{ activeRooms }} active</p>
+            <p class="mt-1 text-xs text-gray-400">
+              <span v-if="!loading && dash">{{ dash.availableRooms }} available · {{ Math.round(dash.occupancyRate * 100) }}% occupied</span>
+            </p>
           </div>
           <div class="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-blue-50">
             <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -33,65 +35,83 @@
         </div>
       </div>
 
-      <!-- Available -->
+      <!-- Today's Activity -->
       <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
         <div class="flex items-start justify-between">
           <div class="flex-1">
-            <p class="text-sm font-medium text-gray-500">Available Now</p>
+            <p class="text-sm font-medium text-gray-500">Today's Activity</p>
             <p class="mt-1 text-2xl font-bold text-gray-900">
               <span v-if="loading" class="inline-block h-7 w-12 animate-pulse rounded-lg bg-gray-200" />
-              <span v-else>{{ availableRooms }}</span>
+              <span v-else>{{ dash ? dash.todayCheckIns + dash.todayCheckOuts : '—' }}</span>
             </p>
-            <p class="mt-1 text-xs text-gray-400">{{ occupiedRooms }} occupied · {{ bookingRooms }} booking · {{ maintenanceRooms }} maintenance</p>
+            <p class="mt-1 text-xs text-gray-400">
+              <span v-if="!loading && dash">{{ dash.todayCheckIns }} check-ins · {{ dash.todayCheckOuts }} check-outs</span>
+            </p>
           </div>
           <div class="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-green-50">
             <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
           </div>
         </div>
       </div>
 
-      <!-- Room Types -->
+      <!-- Active Reservations -->
       <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
         <div class="flex items-start justify-between">
           <div class="flex-1">
-            <p class="text-sm font-medium text-gray-500">Room Types</p>
+            <p class="text-sm font-medium text-gray-500">Active Reservations</p>
             <p class="mt-1 text-2xl font-bold text-gray-900">
               <span v-if="loading" class="inline-block h-7 w-12 animate-pulse rounded-lg bg-gray-200" />
-              <span v-else>{{ roomTypesStore.items.length }}</span>
+              <span v-else>{{ dash ? dash.confirmedReservations + dash.checkedInReservations : '—' }}</span>
             </p>
             <p class="mt-1 text-xs text-gray-400">
-              <span v-if="!loading && cheapestType">from {{ formatPrice(cheapestType.price) }}/night</span>
-              <span v-else-if="loading" class="inline-block h-3 w-20 animate-pulse rounded bg-gray-200" />
+              <span v-if="!loading && dash">{{ dash.confirmedReservations }} confirmed · {{ dash.checkedInReservations }} checked in</span>
             </p>
           </div>
           <div class="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-purple-50">
             <svg class="h-6 w-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
             </svg>
           </div>
         </div>
       </div>
 
-      <!-- Active Users -->
+      <!-- Monthly Revenue -->
       <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
         <div class="flex items-start justify-between">
           <div class="flex-1">
-            <p class="text-sm font-medium text-gray-500">Active Users</p>
+            <p class="text-sm font-medium text-gray-500">Monthly Revenue</p>
             <p class="mt-1 text-2xl font-bold text-gray-900">
               <span v-if="loading" class="inline-block h-7 w-12 animate-pulse rounded-lg bg-gray-200" />
-              <span v-else>{{ activeUserCount }}</span>
+              <span v-else>{{ dash ? formatPrice(dash.monthlyRevenue) : '—' }}</span>
             </p>
-            <p class="mt-1 text-xs text-gray-400">system accounts</p>
+            <p class="mt-1 text-xs" :class="!loading && dash && dash.monthlyBalance > 0 ? 'text-red-400' : 'text-gray-400'">
+              <span v-if="!loading && dash">
+                {{ formatPrice(dash.monthlyPaid) }} paid
+                <template v-if="dash.monthlyBalance > 0"> · {{ formatPrice(dash.monthlyBalance) }} outstanding</template>
+              </span>
+            </p>
           </div>
-          <div class="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-orange-50">
-            <svg class="h-6 w-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+          <div class="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-amber-50">
+            <svg class="h-6 w-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Pending payments alert -->
+    <div
+      v-if="!loading && dash && dash.pendingPaymentReservations > 0"
+      class="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+    >
+      <svg class="h-5 w-5 flex-shrink-0 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+      </svg>
+      <span><strong>{{ dash.pendingPaymentReservations }}</strong> reservation{{ dash.pendingPaymentReservations !== 1 ? 's' : '' }} with pending payments.</span>
+      <NuxtLink to="/dashboard/bookings" class="ml-auto font-semibold underline hover:no-underline">View Bookings</NuxtLink>
     </div>
 
     <!-- Main content grid -->
@@ -117,7 +137,7 @@
         <div v-if="loading" class="space-y-4">
           <div v-for="i in 3" :key="i" class="h-8 animate-pulse rounded-lg bg-gray-100" />
         </div>
-        <div v-else-if="!roomsStore.items.length" class="py-4 text-center text-sm text-gray-400">No rooms yet</div>
+        <div v-else-if="!dash" class="py-4 text-center text-sm text-gray-400">No rooms yet</div>
         <div v-else class="space-y-4">
           <div v-for="s in statusBreakdown" :key="s.label">
             <div class="mb-1 flex items-center justify-between text-sm">
@@ -131,12 +151,12 @@
               <div
                 class="h-full rounded-full transition-all duration-700"
                 :class="s.bar"
-                :style="{ width: roomsStore.items.length ? `${(s.count / roomsStore.items.length) * 100}%` : '0%' }"
+                :style="{ width: dash.totalRooms ? `${(s.count / dash.totalRooms) * 100}%` : '0%' }"
               />
             </div>
           </div>
           <p class="pt-1 text-right text-xs text-gray-400">
-            {{ roomsStore.items.length > 0 ? Math.round((availableRooms / roomsStore.items.length) * 100) : 0 }}% availability rate
+            {{ dash.totalRooms > 0 ? Math.round((dash.availableRooms / dash.totalRooms) * 100) : 0 }}% availability rate
           </p>
         </div>
       </div>
@@ -211,51 +231,33 @@
 </template>
 
 <script setup lang="ts">
-import { RoomStatus } from '~/types/api'
-
 definePageMeta({ layout: 'default', middleware: 'auth' })
 
 const authStore      = useAuthStore()
-const roomsStore     = useRoomsStore()
 const roomTypesStore = useRoomTypesStore()
+const reportsStore   = useReportsStore()
 
-const loading        = ref(true)
-const activeUserCount = ref(0)
+const loading = ref(true)
+const dash    = computed(() => reportsStore.dashboard)
 
-// ── Computed stats ───────────────────────────────────────────────────────────
-const byStatus = (s: RoomStatus) => computed(() =>
-  roomsStore.items.filter(r => r.roomStatus?.toUpperCase() === s).length
-)
-
-const availableRooms   = byStatus(RoomStatus.AVAILABLE)
-const bookingRooms     = byStatus(RoomStatus.BOOKING)
-const occupiedRooms    = byStatus(RoomStatus.OCCUPIED)
-const maintenanceRooms = byStatus(RoomStatus.MAINTENANCE)
-const cleaningRooms    = byStatus(RoomStatus.CLEANING)
-const activeRooms      = computed(() => roomsStore.items.filter(r => r.isActive).length)
-const cheapestType     = computed(() => [...roomTypesStore.items].sort((a, b) => a.price - b.price)[0] ?? null)
-
-const statusBreakdown = computed(() => [
-  { label: 'Available',   count: availableRooms.value,   dot: 'bg-green-500',  bar: 'bg-green-500' },
-  { label: 'Booking',     count: bookingRooms.value,     dot: 'bg-blue-500',   bar: 'bg-blue-500' },
-  { label: 'Occupied',    count: occupiedRooms.value,    dot: 'bg-red-500',    bar: 'bg-red-500' },
-  { label: 'Maintenance', count: maintenanceRooms.value, dot: 'bg-amber-500',  bar: 'bg-amber-500' },
-  { label: 'Cleaning',    count: cleaningRooms.value,    dot: 'bg-purple-500', bar: 'bg-purple-500' },
-])
+// ── Room status breakdown ─────────────────────────────────────────────────────
+const statusBreakdown = computed(() => {
+  const d = dash.value
+  if (!d) return []
+  return [
+    { label: 'Available',   count: d.availableRooms,   dot: 'bg-green-500',  bar: 'bg-green-500' },
+    { label: 'Reserved',    count: d.reservedRooms,    dot: 'bg-blue-500',   bar: 'bg-blue-500' },
+    { label: 'Occupied',    count: d.occupiedRooms,    dot: 'bg-red-500',    bar: 'bg-red-500' },
+    { label: 'Cleaning',    count: d.cleaningRooms,    dot: 'bg-purple-500', bar: 'bg-purple-500' },
+    { label: 'Maintenance', count: d.maintenanceRooms, dot: 'bg-amber-500',  bar: 'bg-amber-500' },
+  ]
+})
 
 // ── Fetch ────────────────────────────────────────────────────────────────────
 onMounted(async () => {
-  const { apiFetch } = useApi()
   await Promise.all([
-    roomsStore.fetchAll(),
+    reportsStore.fetchDashboard(),
     roomTypesStore.fetchAll(),
-    // fetch active user count via filter endpoint (size=1 for minimal payload)
-    apiFetch('/api/users/list/filter', {
-      method: 'POST',
-      body: { pageNumber: 1, size: 1, parameter: { isActive: true } },
-    }).then((res: any) => {
-      activeUserCount.value = res?.data?.totalElements ?? 0
-    }).catch(() => {}),
   ])
   loading.value = false
 })

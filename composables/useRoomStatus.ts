@@ -14,8 +14,8 @@ const STATUS_MAP: Record<string, RoomStatusMeta> = {
     dotClass:     'bg-green-500',
     overlayClass: 'bg-green-50/90 text-green-700 ring-green-200',
   },
-  [RoomStatus.BOOKING]: {
-    label:        'Booking',
+  [RoomStatus.RESERVED]: {
+    label:        'Reserved',
     badgeClass:   'bg-blue-50 text-blue-700 ring-blue-200',
     dotClass:     'bg-blue-500',
     overlayClass: 'bg-blue-50/90 text-blue-700 ring-blue-200',
