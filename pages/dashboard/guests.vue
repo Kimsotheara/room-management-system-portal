@@ -1,28 +1,6 @@
 <template>
   <div class="space-y-6">
 
-    <!-- Toast -->
-    <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="opacity-0 -translate-y-2"
-      enter-to-class="opacity-100 translate-y-0"
-      leave-active-class="transition duration-200 ease-in"
-      leave-from-class="opacity-100 translate-y-0"
-      leave-to-class="opacity-0 -translate-y-2"
-    >
-      <div
-        v-if="toast"
-        class="fixed right-4 top-4 z-50 flex items-center gap-3 rounded-xl px-4 py-3 shadow-lg ring-1 sm:right-6 sm:top-6"
-        :class="toast.type === 'success' ? 'bg-green-50 ring-green-200 text-green-800' : 'bg-red-50 ring-red-200 text-red-800'"
-      >
-        <svg class="h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path v-if="toast.type === 'success'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-          <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <p class="text-sm font-medium">{{ toast.message }}</p>
-      </div>
-    </Transition>
-
     <!-- Header -->
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div>
@@ -31,7 +9,7 @@
       </div>
       <button
         class="inline-flex items-center gap-2 rounded-xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-        @click="openCreate"
+        v-if="can(PERM.GUEST.CREATE)" @click="openCreate"
       >
         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -179,7 +157,7 @@
                   <button
                     class="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-primary-50 hover:text-primary-600"
                     title="Edit guest"
-                    @click="openEdit(guest)"
+                    v-if="can(PERM.GUEST.UPDATE)" @click="openEdit(guest)"
                   >
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -188,7 +166,7 @@
                   <button
                     class="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
                     title="Delete guest"
-                    @click="openDelete(guest)"
+                    v-if="can(PERM.GUEST.DELETE)" @click="openDelete(guest)"
                   >
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -230,7 +208,9 @@
 <script setup lang="ts">
 import type { GuestResponse } from '~/types/api'
 
-definePageMeta({ layout: 'default', middleware: 'auth' })
+definePageMeta({ layout: 'default', middleware: 'auth', permission: 'GUEST_READ' })
+
+const { can } = usePermissions()
 
 const store = useGuestsStore()
 
@@ -277,15 +257,7 @@ function openCreate() { selectedGuest.value = null; showForm.value = true }
 function openEdit(g: GuestResponse) { selectedGuest.value = g; showForm.value = true }
 function openDelete(g: GuestResponse) { selectedGuest.value = g; showDelete.value = true }
 
-// ── Toast ────────────────────────────────────────────────────────────────────
-const toast = ref<{ type: 'success' | 'error'; message: string } | null>(null)
-let toastTimer: ReturnType<typeof setTimeout> | null = null
-
-function showToast(type: 'success' | 'error', message: string) {
-  if (toastTimer) clearTimeout(toastTimer)
-  toast.value = { type, message }
-  toastTimer = setTimeout(() => { toast.value = null }, 3500)
-}
+const { showToast } = useToast()
 
 // ── Handlers ─────────────────────────────────────────────────────────────────
 function onSaved() {
@@ -301,8 +273,7 @@ async function handleDelete() {
     showToast('success', `${selectedGuest.value.firstName} ${selectedGuest.value.lastName} deleted`)
     await loadPage()
   } catch (err: unknown) {
-    const e = err as { data?: { message?: string }; message?: string }
-    showToast('error', e?.data?.message || e?.message || 'Delete failed')
+    showToast('error', getApiError(err, 'Delete failed'))
   }
 }
 

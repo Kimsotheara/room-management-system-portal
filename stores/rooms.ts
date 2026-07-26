@@ -27,8 +27,7 @@ export const useRoomsStore = defineStore('rooms', {
           this.items = res.data
         }
       } catch (err: unknown) {
-        const e = err as { data?: { message?: string }; message?: string }
-        this.error = e?.data?.message || e?.message || 'Failed to load rooms'
+        this.error = getApiError(err, 'Failed to load rooms')
         throw err
       } finally {
         this.loading = false

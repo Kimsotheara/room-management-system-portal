@@ -1,45 +1,42 @@
 import { defineStore } from 'pinia'
 import type {
   ApiResponse,
-  RoleResponse,
-  CreateRoleRequest,
-  UpdateRoleRequest,
+  HotelResponse,
+  CreateHotelRequest,
+  UpdateHotelRequest,
 } from '~/types/api'
 
-export const useRolesStore = defineStore('roles', {
+export const useHotelsStore = defineStore('hotels', {
   state: () => ({
-    items: [] as RoleResponse[],   // full list from API
-    loading: false,
+    items:      [] as HotelResponse[],
+    loading:    false,
     submitting: false,
-    error: null as string | null,
+    error:      null as string | null,
   }),
 
   actions: {
-    // GET /api/roles → ApiResponse<RoleResponse[]>  (no server-side pagination)
     async fetchAll() {
       const { apiFetch } = useApi()
       this.loading = true
-      this.error = null
+      this.error   = null
       try {
-        const res = await apiFetch<ApiResponse<RoleResponse[]>>('/api/roles')
-        if (res.success && res.data) {
-          this.items = res.data
-        }
+        const res = await apiFetch<ApiResponse<HotelResponse[]>>('/api/hotels')
+        if (res.success && res.data) this.items = res.data
       } catch (err: unknown) {
-        this.error = getApiError(err, 'Failed to load roles')
+        this.error = getApiError(err, 'Failed to load hotels')
         throw err
       } finally {
         this.loading = false
       }
     },
 
-    async create(data: CreateRoleRequest): Promise<RoleResponse> {
+    async create(data: CreateHotelRequest): Promise<HotelResponse> {
       const { apiFetch } = useApi()
       this.submitting = true
       try {
-        const res = await apiFetch<ApiResponse<RoleResponse>>('/api/roles', {
+        const res = await apiFetch<ApiResponse<HotelResponse>>('/api/hotels', {
           method: 'POST',
-          body: data,
+          body:   data,
         })
         if (res.success && res.data) return res.data
         throw new Error(res.message || 'Create failed')
@@ -48,13 +45,13 @@ export const useRolesStore = defineStore('roles', {
       }
     },
 
-    async update(id: number, data: UpdateRoleRequest): Promise<RoleResponse> {
+    async update(id: number, data: UpdateHotelRequest): Promise<HotelResponse> {
       const { apiFetch } = useApi()
       this.submitting = true
       try {
-        const res = await apiFetch<ApiResponse<RoleResponse>>(`/api/roles/${id}`, {
+        const res = await apiFetch<ApiResponse<HotelResponse>>(`/api/hotels/${id}`, {
           method: 'PUT',
-          body: data,
+          body:   data,
         })
         if (res.success && res.data) return res.data
         throw new Error(res.message || 'Update failed')
@@ -67,7 +64,7 @@ export const useRolesStore = defineStore('roles', {
       const { apiFetch } = useApi()
       this.submitting = true
       try {
-        await apiFetch<ApiResponse<void>>(`/api/roles/${id}`, { method: 'DELETE' })
+        await apiFetch<ApiResponse<void>>(`/api/hotels/${id}`, { method: 'DELETE' })
       } finally {
         this.submitting = false
       }

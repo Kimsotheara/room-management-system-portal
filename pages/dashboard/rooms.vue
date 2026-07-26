@@ -1,28 +1,6 @@
 <template>
   <div class="space-y-6">
 
-    <!-- Toast -->
-    <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="opacity-0 -translate-y-2"
-      enter-to-class="opacity-100 translate-y-0"
-      leave-active-class="transition duration-200 ease-in"
-      leave-from-class="opacity-100 translate-y-0"
-      leave-to-class="opacity-0 -translate-y-2"
-    >
-      <div
-        v-if="toast"
-        class="fixed right-4 top-4 z-50 flex items-center gap-3 rounded-xl px-4 py-3 shadow-lg ring-1 sm:right-6 sm:top-6"
-        :class="toast.type === 'success' ? 'bg-green-50 ring-green-200 text-green-800' : 'bg-red-50 ring-red-200 text-red-800'"
-      >
-        <svg class="h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path v-if="toast.type === 'success'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-          <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <p class="text-sm font-medium">{{ toast.message }}</p>
-      </div>
-    </Transition>
-
     <!-- Header -->
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div>
@@ -31,7 +9,7 @@
       </div>
       <button
         class="inline-flex items-center gap-2 rounded-xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-        @click="openCreate"
+        v-if="can(PERM.ROOM.CREATE)" @click="openCreate"
       >
         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -171,7 +149,7 @@
             <!-- Edit -->
             <button
               class="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-gray-200 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
-              @click="openEdit(room)"
+              v-if="can(PERM.ROOM.UPDATE)" @click="openEdit(room)"
             >
               <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -199,7 +177,7 @@
             <button
               class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border border-gray-200 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
               title="Delete room"
-              @click="openDelete(room)"
+              v-if="can(PERM.ROOM.DELETE)" @click="openDelete(room)"
             >
               <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -235,7 +213,9 @@
 import type { RoomResponse } from '~/types/api'
 import { useRoomStatus } from '~/composables/useRoomStatus'
 
-definePageMeta({ layout: 'default', middleware: 'auth' })
+definePageMeta({ layout: 'default', middleware: 'auth', permission: 'ROOM_READ' })
+
+const { can } = usePermissions()
 
 const store = useRoomsStore()
 const { statusOptions } = useRoomStatus()
@@ -290,20 +270,11 @@ async function handleDelete() {
     showToast('success', `Room ${selectedRoom.value.roomNumber} deleted`)
     await store.fetchAll()
   } catch (err: unknown) {
-    const e = err as { data?: { message?: string }; message?: string }
-    showToast('error', e?.data?.message || e?.message || 'Delete failed')
+    showToast('error', getApiError(err, 'Delete failed'))
   }
 }
 
-// Toast
-const toast = ref<{ type: 'success' | 'error'; message: string } | null>(null)
-let toastTimer: ReturnType<typeof setTimeout> | null = null
-
-function showToast(type: 'success' | 'error', message: string) {
-  if (toastTimer) clearTimeout(toastTimer)
-  toast.value = { type, message }
-  toastTimer = setTimeout(() => { toast.value = null }, 3500)
-}
+const { showToast } = useToast()
 
 // Helpers
 function formatPrice(price: number) {

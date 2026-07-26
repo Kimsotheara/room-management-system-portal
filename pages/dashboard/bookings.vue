@@ -1,28 +1,6 @@
 <template>
   <div class="space-y-6">
 
-    <!-- Toast -->
-    <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="opacity-0 -translate-y-2"
-      enter-to-class="opacity-100 translate-y-0"
-      leave-active-class="transition duration-200 ease-in"
-      leave-from-class="opacity-100 translate-y-0"
-      leave-to-class="opacity-0 -translate-y-2"
-    >
-      <div
-        v-if="toast"
-        class="fixed right-4 top-4 z-50 flex items-center gap-3 rounded-xl px-4 py-3 shadow-lg ring-1 sm:right-6 sm:top-6"
-        :class="toast.type === 'success' ? 'bg-green-50 ring-green-200 text-green-800' : 'bg-red-50 ring-red-200 text-red-800'"
-      >
-        <svg class="h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path v-if="toast.type === 'success'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-          <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <p class="text-sm font-medium">{{ toast.message }}</p>
-      </div>
-    </Transition>
-
     <!-- Header -->
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div>
@@ -30,6 +8,7 @@
         <p class="mt-1 text-sm text-gray-500">{{ filteredItems.length }} of {{ store.items.length }} reservations</p>
       </div>
       <button
+        v-if="can(PERM.RESERVATION.CREATE)"
         class="inline-flex items-center gap-2 rounded-xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
         @click="showForm = true"
       >
@@ -180,7 +159,7 @@
               <td class="px-5 py-4">
                 <div class="flex flex-wrap items-center justify-end gap-1.5">
                   <!-- CONFIRMED: Check In + Cancel -->
-                  <template v-if="res.status === 'CONFIRMED'">
+                  <template v-if="res.status === 'CONFIRMED' && can(PERM.RESERVATION.UPDATE)">
                     <button
                       :disabled="store.submitting"
                       class="inline-flex items-center gap-1 rounded-lg border border-green-200 bg-green-50 px-2.5 py-1.5 text-xs font-medium text-green-700 transition-colors hover:bg-green-100 disabled:opacity-50"
@@ -206,7 +185,7 @@
                   </template>
 
                   <!-- CHECKED_IN: Services + Check Out -->
-                  <template v-else-if="res.status === 'CHECKED_IN'">
+                  <template v-else-if="res.status === 'CHECKED_IN' && can(PERM.RESERVATION.UPDATE)">
                     <button
                       class="inline-flex items-center gap-1 rounded-lg border border-green-200 bg-green-50 px-2.5 py-1.5 text-xs font-medium text-green-700 transition-colors hover:bg-green-100"
                       title="Manage services"
@@ -244,6 +223,7 @@
                   </button>
                   <!-- Delete -->
                   <button
+                    v-if="can(PERM.RESERVATION.DELETE)"
                     class="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
                     title="Delete reservation"
                     @click="openDelete(res)"
@@ -306,7 +286,9 @@
 <script setup lang="ts">
 import type { ReservationResponse } from '~/types/api'
 
-definePageMeta({ layout: 'default', middleware: 'auth' })
+definePageMeta({ layout: 'default', middleware: 'auth', permission: 'RESERVATION_READ' })
+
+const { can } = usePermissions()
 
 const store = useReservationsStore()
 
@@ -386,8 +368,7 @@ async function quickAction(action: 'checkIn' | 'checkOut', res: ReservationRespo
     showToast('success', `${labels[action]}: ${res.guestName} #${res.id}`)
     await store.fetchAll()
   } catch (err: unknown) {
-    const e = err as { data?: { message?: string }; message?: string }
-    showToast('error', e?.data?.message || e?.message || 'Action failed')
+    showToast('error', getApiError(err, 'Action failed'))
   }
 }
 
@@ -399,20 +380,11 @@ async function handleCancel() {
     showToast('success', `Booking #${selectedRes.value.id} cancelled`)
     await store.fetchAll()
   } catch (err: unknown) {
-    const e = err as { data?: { message?: string }; message?: string }
-    showToast('error', e?.data?.message || e?.message || 'Cancel failed')
+    showToast('error', getApiError(err, 'Cancel failed'))
   }
 }
 
-// ── Toast ─────────────────────────────────────────────────────────────────────
-const toast = ref<{ type: 'success' | 'error'; message: string } | null>(null)
-let toastTimer: ReturnType<typeof setTimeout> | null = null
-
-function showToast(type: 'success' | 'error', message: string) {
-  if (toastTimer) clearTimeout(toastTimer)
-  toast.value = { type, message }
-  toastTimer  = setTimeout(() => { toast.value = null }, 3500)
-}
+const { showToast } = useToast()
 
 // ── Handlers ─────────────────────────────────────────────────────────────────
 function onCreated() {
@@ -428,8 +400,7 @@ async function handleDelete() {
     showToast('success', `Reservation #${selectedRes.value.id} deleted`)
     await store.fetchAll()
   } catch (err: unknown) {
-    const e = err as { data?: { message?: string }; message?: string }
-    showToast('error', e?.data?.message || e?.message || 'Delete failed')
+    showToast('error', getApiError(err, 'Delete failed'))
   }
 }
 

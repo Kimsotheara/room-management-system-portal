@@ -233,8 +233,7 @@ async function uploadImages() {
     pendingFiles.value = []
     emit('updated')
   } catch (err: unknown) {
-    const e = err as { data?: { message?: string }; message?: string }
-    uploadError.value = e?.data?.message || e?.message || 'Upload failed'
+    uploadError.value = getApiError(err, 'Upload failed')
   } finally {
     uploading.value = false
   }
@@ -249,8 +248,7 @@ async function deleteImage(imageId: number) {
     clearImgCache(props.room.roomId, imageId)
     emit('updated')
   } catch (err: unknown) {
-    const e = err as { data?: { message?: string }; message?: string }
-    uploadError.value = e?.data?.message || e?.message || 'Delete failed'
+    uploadError.value = getApiError(err, 'Delete failed')
   } finally {
     deletingId.value = null
   }

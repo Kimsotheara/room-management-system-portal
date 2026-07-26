@@ -101,7 +101,7 @@
 </template>
 
 <script setup lang="ts">
-const props = withDefaults(defineProps<{
+withDefaults(defineProps<{
   modelValue: string
   placeholder?: string
   error?: boolean

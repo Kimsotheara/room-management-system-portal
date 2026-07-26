@@ -325,8 +325,7 @@ async function deleteExistingImage(imageId: number) {
     clearImgCache(props.room.roomId, imageId)
     emit('saved')   // refresh parent list so updated image count shows
   } catch (err: unknown) {
-    const e = err as { data?: { message?: string }; message?: string }
-    apiError.value = e?.data?.message || e?.message || 'Delete failed'
+    apiError.value = getApiError(err, 'Delete failed')
   } finally {
     deletingId.value = null
   }
@@ -370,8 +369,7 @@ async function handleSubmit() {
     emit('saved')
     emit('update:modelValue', false)
   } catch (err: unknown) {
-    const e = err as { data?: { message?: string }; message?: string }
-    apiError.value = e?.data?.message || e?.message || 'An error occurred'
+    apiError.value = getApiError(err, 'An error occurred')
   } finally {
     step.value = null
   }

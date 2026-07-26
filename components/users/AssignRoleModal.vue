@@ -138,8 +138,7 @@ async function handleAssignRole() {
     selectedRoleId.value = ''
     emit('updated')
   } catch (err: unknown) {
-    const e = err as { data?: { message?: string }; message?: string }
-    apiError.value = e?.data?.message || e?.message || 'Failed to assign role'
+    apiError.value = getApiError(err, 'Failed to assign role')
   } finally {
     assigning.value = false
   }
@@ -154,8 +153,7 @@ async function handleRemoveRole(roleId: number) {
     currentRoles.value = updated.roles ? [...updated.roles] : currentRoles.value.filter(r => r.roleId !== roleId)
     emit('updated')
   } catch (err: unknown) {
-    const e = err as { data?: { message?: string }; message?: string }
-    apiError.value = e?.data?.message || e?.message || 'Failed to remove role'
+    apiError.value = getApiError(err, 'Failed to remove role')
   } finally {
     removing.value = null
   }
