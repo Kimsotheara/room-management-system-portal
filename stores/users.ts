@@ -50,8 +50,7 @@ export const useUsersStore = defineStore('users', {
           this.totalElements = res.data.totalElements
         }
       } catch (err: unknown) {
-        const e = err as { data?: { message?: string }; message?: string }
-        this.error = e?.data?.message || e?.message || 'Failed to load users'
+        this.error = getApiError(err, 'Failed to load users')
         throw err
       } finally {
         this.loading = false

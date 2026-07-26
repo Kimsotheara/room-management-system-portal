@@ -28,8 +28,7 @@ export const useReservationsStore = defineStore('reservations', {
         const res = await apiFetch<ApiResponse<ReservationResponse[]>>('/api/reservations')
         if (res.success && res.data) this.items = res.data
       } catch (err: unknown) {
-        const e = err as { data?: { message?: string }; message?: string }
-        this.error = e?.data?.message || e?.message || 'Failed to load reservations'
+        this.error = getApiError(err, 'Failed to load reservations')
         throw err
       } finally {
         this.loading = false
@@ -149,6 +148,16 @@ export const useReservationsStore = defineStore('reservations', {
         `/api/payments/reservation/${reservationId}`,
       )
       return res.data ?? []
+    },
+
+    async removePayment(paymentId: number): Promise<void> {
+      const { apiFetch } = useApi()
+      this.submitting = true
+      try {
+        await apiFetch<ApiResponse<void>>(`/api/payments/${paymentId}`, { method: 'DELETE' })
+      } finally {
+        this.submitting = false
+      }
     },
 
     async getInvoice(id: number): Promise<InvoiceResponse> {

@@ -26,8 +26,7 @@ export const useReportsStore = defineStore('reports', {
         }
         throw new Error(res.message || 'Failed to load dashboard')
       } catch (err: unknown) {
-        const e = err as { data?: { message?: string }; message?: string }
-        this.error = e?.data?.message || e?.message || 'Failed to load dashboard'
+        this.error = getApiError(err, 'Failed to load dashboard')
         throw err
       } finally {
         this.loading = false

@@ -20,6 +20,9 @@
       class="fixed inset-0 bg-black/50 z-20 lg:hidden"
       @click="sidebarOpen = false"
     />
+
+    <!-- Global toast -->
+    <UiToast />
   </div>
 </template>
 

@@ -19,6 +19,11 @@ export const useAuthStore = defineStore('auth', {
     hasRole: (state) => (role: string) => {
       return state.user?.roles?.includes(role) ?? false
     },
+    // Admin roles bypass permission checks so a misconfigured code can't lock them out.
+    isAdmin: (state) => {
+      const roles = state.user?.roles ?? []
+      return roles.some((r) => ['ADMIN', 'SUPER_ADMIN'].includes(String(r).toUpperCase()))
+    },
     userDisplayName: (state) => {
       return state.user?.fullName || state.user?.username || 'User'
     },

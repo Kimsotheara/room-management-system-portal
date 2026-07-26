@@ -23,8 +23,7 @@ export const useServicesStore = defineStore('services', {
         const res = await apiFetch<ApiResponse<ServiceResponse[]>>('/api/services')
         if (res.success && res.data) this.items = res.data
       } catch (err: unknown) {
-        const e = err as { data?: { message?: string }; message?: string }
-        this.error = e?.data?.message || e?.message || 'Failed to load services'
+        this.error = getApiError(err, 'Failed to load services')
         throw err
       } finally {
         this.loading = false

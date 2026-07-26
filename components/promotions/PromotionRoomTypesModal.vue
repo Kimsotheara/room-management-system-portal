@@ -136,8 +136,7 @@ watch(() => props.modelValue, async (v) => {
     assignmentMap.value = aMap
     checkedIds.value    = ids
   } catch (err: unknown) {
-    const e = err as { data?: { message?: string }; message?: string }
-    apiError.value = e?.data?.message || e?.message || 'Failed to load room types'
+    apiError.value = getApiError(err, 'Failed to load room types')
   } finally {
     loading.value = false
   }
@@ -168,8 +167,7 @@ async function handleSave() {
     emit('saved')
     emit('update:modelValue', false)
   } catch (err: unknown) {
-    const e = err as { data?: { message?: string }; message?: string }
-    apiError.value = e?.data?.message || e?.message || 'Save failed'
+    apiError.value = getApiError(err, 'Save failed')
   } finally {
     saving.value = false
   }

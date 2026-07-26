@@ -25,8 +25,7 @@ export const usePromotionsStore = defineStore('promotions', {
         const res = await apiFetch<ApiResponse<PromotionResponse[]>>('/api/promotions')
         if (res.success && res.data) this.items = res.data
       } catch (err: unknown) {
-        const e = err as { data?: { message?: string }; message?: string }
-        this.error = e?.data?.message || e?.message || 'Failed to load promotions'
+        this.error = getApiError(err, 'Failed to load promotions')
         throw err
       } finally {
         this.loading = false

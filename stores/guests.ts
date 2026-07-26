@@ -46,8 +46,7 @@ export const useGuestsStore = defineStore('guests', {
           this.totalElements = res.data.totalElements
         }
       } catch (err: unknown) {
-        const e = err as { data?: { message?: string }; message?: string }
-        this.error = e?.data?.message || e?.message || 'Failed to load guests'
+        this.error = getApiError(err, 'Failed to load guests')
         throw err
       } finally {
         this.loading = false

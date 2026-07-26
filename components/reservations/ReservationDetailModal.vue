@@ -333,6 +333,7 @@
                   <th class="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Method</th>
                   <th class="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Type</th>
                   <th class="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">Amount</th>
+                  <th class="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wider text-gray-500"></th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-100">
@@ -343,6 +344,18 @@
                   </td>
                   <td class="px-4 py-3 text-gray-500 text-xs">{{ p.paymentType }}</td>
                   <td class="px-4 py-3 text-right font-semibold text-gray-900">{{ fmtCurrency(p.amount) }}</td>
+                  <td class="px-4 py-3 text-right">
+                    <button
+                      class="inline-flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
+                      title="Delete payment"
+                      :disabled="store.submitting"
+                      @click="removePayment(p.id)"
+                    >
+                      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -532,8 +545,7 @@ async function loadInvoice() {
   try {
     invoice.value = await store.getInvoice(props.reservationId)
   } catch (err: unknown) {
-    const e = err as { data?: { message?: string }; message?: string }
-    invoiceError.value = e?.data?.message || e?.message || 'Failed to load invoice'
+    invoiceError.value = getApiError(err, 'Failed to load invoice')
   } finally {
     loadingInvoice.value = false
   }
@@ -553,8 +565,7 @@ async function loadReservation() {
   try {
     reservation.value = await store.fetchById(props.reservationId)
   } catch (err: unknown) {
-    const e = err as { data?: { message?: string }; message?: string }
-    actionError.value = e?.data?.message || e?.message || 'Failed to load reservation'
+    actionError.value = getApiError(err, 'Failed to load reservation')
   } finally {
     loadingDetail.value = false
   }
@@ -585,8 +596,7 @@ async function doAction(action: 'checkIn' | 'checkOut' | 'cancel') {
     invoice.value     = null  // reset so invoice is re-fetched
     emit('updated')
   } catch (err: unknown) {
-    const e = err as { data?: { message?: string }; message?: string }
-    actionError.value = e?.data?.message || e?.message || 'Action failed'
+    actionError.value = getApiError(err, 'Action failed')
   }
 }
 
@@ -609,8 +619,7 @@ async function addService() {
     invoice.value     = null
     emit('updated')
   } catch (err: unknown) {
-    const e = err as { data?: { message?: string }; message?: string }
-    serviceError.value = e?.data?.message || e?.message || 'Failed to add service'
+    serviceError.value = getApiError(err, 'Failed to add service')
   }
 }
 
@@ -623,8 +632,7 @@ async function removeService(usageId: number) {
     invoice.value     = null
     emit('updated')
   } catch (err: unknown) {
-    const e = err as { data?: { message?: string }; message?: string }
-    actionError.value = e?.data?.message || e?.message || 'Failed to remove service'
+    actionError.value = getApiError(err, 'Failed to remove service')
   }
 }
 
@@ -665,8 +673,21 @@ async function doPayment() {
     await loadPayments()
     emit('updated')
   } catch (err: unknown) {
-    const e = err as { data?: { message?: string }; message?: string }
-    paymentError.value = e?.data?.message || e?.message || 'Payment failed'
+    paymentError.value = getApiError(err, 'Payment failed')
+  }
+}
+
+async function removePayment(paymentId: number) {
+  if (!props.reservationId) return
+  paymentError.value = null
+  try {
+    await store.removePayment(paymentId)
+    invoice.value     = null
+    reservation.value = await store.fetchById(props.reservationId)
+    await loadPayments()
+    emit('updated')
+  } catch (err: unknown) {
+    paymentError.value = getApiError(err, 'Failed to delete payment')
   }
 }
 

@@ -4,17 +4,17 @@
     <!-- Header -->
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <h1 class="text-2xl font-bold text-gray-900">Services</h1>
-        <p class="mt-1 text-sm text-gray-500">{{ filteredItems.length }} of {{ store.items.length }} services</p>
+        <h1 class="text-2xl font-bold text-gray-900">Hotels</h1>
+        <p class="mt-1 text-sm text-gray-500">{{ filteredItems.length }} of {{ store.items.length }} hotels</p>
       </div>
       <button
         class="inline-flex items-center gap-2 rounded-xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-        v-if="can(PERM.SERVICE.CREATE)" @click="openCreate"
+        v-if="can(PERM.HOTEL.CREATE)" @click="openCreate"
       >
         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
         </svg>
-        Add Service
+        Add Hotel
       </button>
     </div>
 
@@ -27,7 +27,7 @@
         <input
           v-model="keyword"
           type="text"
-          placeholder="Search by service name…"
+          placeholder="Search by hotel name, contact or address…"
           class="block w-full rounded-xl border border-gray-200 py-2.5 pl-9 pr-3.5 text-sm placeholder-gray-400 transition focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary-500"
         />
       </div>
@@ -56,31 +56,31 @@
       <div v-else-if="!pagedItems.length" class="flex flex-col items-center justify-center py-16 text-center">
         <div class="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-gray-100">
           <svg class="h-7 w-7 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
           </svg>
         </div>
-        <p class="text-sm font-medium text-gray-900">No services found</p>
+        <p class="text-sm font-medium text-gray-900">No hotels found</p>
         <p class="mt-1 text-sm text-gray-500">
-          {{ keyword || filterStatus ? 'Try adjusting your search or filters' : 'Add the first service to get started' }}
+          {{ keyword || filterStatus ? 'Try adjusting your search or filters' : 'Add the first hotel to get started' }}
         </p>
       </div>
 
       <!-- Table -->
       <div v-else class="overflow-x-auto">
-        <table class="w-full min-w-[500px]">
+        <table class="w-full min-w-[600px]">
           <thead>
             <tr class="border-b border-gray-100 bg-gray-50">
-              <th class="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Service</th>
-              <th class="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Price</th>
+              <th class="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Hotel</th>
+              <th class="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Contact</th>
+              <th class="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Address</th>
               <th class="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Status</th>
-              <th class="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Created</th>
               <th class="px-5 py-3.5 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">Actions</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">
             <tr
-              v-for="svc in pagedItems"
-              :key="svc.id"
+              v-for="hotel in pagedItems"
+              :key="hotel.hotelId"
               class="transition-colors hover:bg-gray-50"
             >
               <!-- Name -->
@@ -88,39 +88,41 @@
                 <div class="flex items-center gap-3">
                   <div class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-primary-50">
                     <svg class="h-4 w-4 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                     </svg>
                   </div>
-                  <p class="text-sm font-medium text-gray-900">{{ svc.name }}</p>
+                  <p class="text-sm font-medium text-gray-900">{{ hotel.hotelName }}</p>
                 </div>
               </td>
 
-              <!-- Price -->
-              <td class="px-5 py-4 text-sm font-semibold text-gray-900">{{ formatPrice(svc.price) }}</td>
+              <!-- Contact -->
+              <td class="px-5 py-4 text-sm text-gray-600">{{ hotel.contact || '—' }}</td>
+
+              <!-- Address -->
+              <td class="px-5 py-4 text-sm text-gray-600">
+                <span class="line-clamp-1 max-w-xs">{{ hotel.address || '—' }}</span>
+              </td>
 
               <!-- Status -->
               <td class="px-5 py-4">
                 <span
                   class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset"
-                  :class="svc.isActive
+                  :class="hotel.isActive
                     ? 'bg-green-50 text-green-700 ring-green-200'
                     : 'bg-gray-100 text-gray-500 ring-gray-200'"
                 >
-                  <span class="h-1.5 w-1.5 rounded-full" :class="svc.isActive ? 'bg-green-500' : 'bg-gray-400'" />
-                  {{ svc.isActive ? 'Active' : 'Inactive' }}
+                  <span class="h-1.5 w-1.5 rounded-full" :class="hotel.isActive ? 'bg-green-500' : 'bg-gray-400'" />
+                  {{ hotel.isActive ? 'Active' : 'Inactive' }}
                 </span>
               </td>
-
-              <!-- Created -->
-              <td class="px-5 py-4 text-sm text-gray-400">{{ formatDate(svc.createdAt) }}</td>
 
               <!-- Actions -->
               <td class="px-5 py-4">
                 <div class="flex items-center justify-end gap-1">
                   <button
                     class="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-primary-50 hover:text-primary-600"
-                    title="Edit service"
-                    v-if="can(PERM.SERVICE.UPDATE)" @click="openEdit(svc)"
+                    title="Edit hotel"
+                    v-if="can(PERM.HOTEL.UPDATE)" @click="openEdit(hotel)"
                   >
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -128,8 +130,8 @@
                   </button>
                   <button
                     class="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
-                    title="Delete service"
-                    v-if="can(PERM.SERVICE.DELETE)" @click="openDelete(svc)"
+                    title="Delete hotel"
+                    v-if="can(PERM.HOTEL.DELETE)" @click="openDelete(hotel)"
                   >
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -155,11 +157,11 @@
     </div>
 
     <!-- Modals -->
-    <ServicesServiceFormModal v-model="showForm" :service="selectedService" @saved="onSaved" />
+    <HotelsHotelFormModal v-model="showForm" :hotel="selectedHotel" @saved="onSaved" />
     <UiConfirmDialog
       v-model="showDelete"
-      title="Delete Service"
-      :message="`Delete '${selectedService?.name}'?`"
+      title="Delete Hotel"
+      :message="`Delete '${selectedHotel?.hotelName}'?`"
       detail="This action cannot be undone."
       confirm-label="Delete"
       :loading="store.submitting"
@@ -169,13 +171,13 @@
 </template>
 
 <script setup lang="ts">
-import type { ServiceResponse } from '~/types/api'
+import type { HotelResponse } from '~/types/api'
 
-definePageMeta({ layout: 'default', middleware: 'auth', permission: 'SERVICE_READ' })
+definePageMeta({ layout: 'default', middleware: 'auth', permission: 'HOTEL_READ' })
 
 const { can } = usePermissions()
 
-const store = useServicesStore()
+const store = useHotelsStore()
 
 // ── Filters ───────────────────────────────────────────────────────────────────
 const keyword      = ref('')
@@ -187,11 +189,15 @@ const filteredItems = computed(() => {
   let items = store.items
   if (keyword.value.trim()) {
     const q = keyword.value.toLowerCase()
-    items = items.filter(s => s.name.toLowerCase().includes(q))
+    items = items.filter(h =>
+      h.hotelName.toLowerCase().includes(q) ||
+      (h.contact ?? '').toLowerCase().includes(q) ||
+      (h.address ?? '').toLowerCase().includes(q),
+    )
   }
   if (filterStatus.value !== '') {
     const active = filterStatus.value === 'true'
-    items = items.filter(s => s.isActive === active)
+    items = items.filter(h => h.isActive === active)
   }
   return items
 })
@@ -205,42 +211,32 @@ const pagedItems = computed(() => {
 watch([keyword, filterStatus], () => { currentPage.value = 0 })
 
 // ── Modal state ───────────────────────────────────────────────────────────────
-const showForm       = ref(false)
-const showDelete     = ref(false)
-const selectedService = ref<ServiceResponse | null>(null)
+const showForm      = ref(false)
+const showDelete    = ref(false)
+const selectedHotel = ref<HotelResponse | null>(null)
 
-function openCreate() { selectedService.value = null; showForm.value = true }
-function openEdit(s: ServiceResponse) { selectedService.value = s; showForm.value = true }
-function openDelete(s: ServiceResponse) { selectedService.value = s; showDelete.value = true }
+function openCreate() { selectedHotel.value = null; showForm.value = true }
+function openEdit(h: HotelResponse) { selectedHotel.value = h; showForm.value = true }
+function openDelete(h: HotelResponse) { selectedHotel.value = h; showDelete.value = true }
 
 const { showToast } = useToast()
 
 // ── Handlers ─────────────────────────────────────────────────────────────────
 function onSaved() {
-  showToast('success', selectedService.value ? 'Service updated' : 'Service added successfully')
+  showToast('success', selectedHotel.value ? 'Hotel updated' : 'Hotel added successfully')
   store.fetchAll()
 }
 
 async function handleDelete() {
-  if (!selectedService.value) return
+  if (!selectedHotel.value) return
   try {
-    await store.remove(selectedService.value.id)
+    await store.remove(selectedHotel.value.hotelId)
     showDelete.value = false
-    showToast('success', `'${selectedService.value.name}' deleted`)
+    showToast('success', `'${selectedHotel.value.hotelName}' deleted`)
     await store.fetchAll()
   } catch (err: unknown) {
     showToast('error', getApiError(err, 'Delete failed'))
   }
-}
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-function formatPrice(price: number) {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price)
-}
-
-function formatDate(iso: string) {
-  if (!iso) return '—'
-  return new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
 onMounted(() => store.fetchAll())

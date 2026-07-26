@@ -221,8 +221,7 @@ async function handleSubmit() {
     emit('saved')
     emit('update:modelValue', false)
   } catch (err: unknown) {
-    const e = err as { data?: { message?: string }; message?: string }
-    apiError.value = e?.data?.message || e?.message || 'An error occurred'
+    apiError.value = getApiError(err, 'An error occurred')
   }
 }
 </script>

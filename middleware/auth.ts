@@ -26,4 +26,11 @@ export default defineNuxtRouteMiddleware(async (to) => {
       return navigateTo('/login')
     }
   }
+
+  // Route-level permission gate (admins bypass). Pages declare the required
+  // code via definePageMeta({ permission: 'X_READ' }).
+  const required = to.meta.permission as string | undefined
+  if (required && authStore.user && !authStore.isAdmin && !authStore.hasPermission(required)) {
+    return navigateTo('/dashboard')
+  }
 })

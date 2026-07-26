@@ -18,7 +18,7 @@
 </template>
 
 <script setup lang="ts">
-const props = defineProps<{
+defineProps<{
   error: {
     statusCode: number
     message?: string

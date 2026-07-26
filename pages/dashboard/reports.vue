@@ -264,7 +264,7 @@
 <script setup lang="ts">
 import type { RevenueReportResponse, ReservationReportResponse } from '~/types/api'
 
-definePageMeta({ layout: 'default', middleware: 'auth' })
+definePageMeta({ layout: 'default', middleware: 'auth', permission: 'REPORT_READ' })
 
 const store = useReportsStore()
 
@@ -314,8 +314,7 @@ async function fetchReports() {
     revenue.value           = rev
     reservationReport.value = res
   } catch (err: unknown) {
-    const e = err as { data?: { message?: string }; message?: string }
-    error.value = e?.data?.message || e?.message || 'Failed to load reports'
+    error.value = getApiError(err, 'Failed to load reports')
   } finally {
     loading.value = false
   }
